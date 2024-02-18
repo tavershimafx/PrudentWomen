@@ -1,0 +1,19 @@
+﻿@model ForgotPasswordModel
+@{
+    ViewData["Title"] = "Register confirmation |";
+}
+
+
+<div class="login-brand">
+    <img src="~/assets/img/logos/logo.jpeg" alt="logo" width="100" class="shadow-light rounded-circle">
+</div>
+<div class="card card-primary">
+    <div class="card-header">
+        <h4>Register Confirmation</h4>
+    </div>
+    <div class="card-body">
+        <h1>@Model.Email</h1>
+        <p>Your Prudent Number is</p>
+        <p class="text-muted">Please check your email to confirm your account.</p>
+    </div>
+</div>

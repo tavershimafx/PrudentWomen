@@ -1,0 +1,87 @@
+﻿@model IEnumerable<RoleListItemVm>
+@{
+    ViewData["Title"] = "Roles |";
+}
+
+<!-- Start app main Content -->
+<div class="main-content">
+    <div class="row row-deck">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Roles</h4>
+                    <div class="card-header-action">
+                        <a href="javascript:void(0);" class="btn btn-danger" id="new_role">Create Role <i class="fas fa-chevron-right"></i></a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive table-invoice">
+                        <table class="table table-striped">
+                            <tr>
+                                <th>Name</th>
+                                <th>Action</th>
+                            </tr>
+                            @foreach(var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.Name</td>
+                                    <td>
+                                        <a href="/admin/roles/get-role/@item.Id" class="btn btn-primary btn-action mr-1"
+                                           data-toggle="tooltip" title="Edit"
+                                           data-role="/admin/roles/update-role"
+                                           data-fetch="getRole"
+                                           data-update="updateRole">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>
+                                        <a href="/admin/roles/delete-role/@item.Id" class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-delete="@item.Id"><i class="fas fa-trash"></i></a>
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script asp-append-version="true" type="text/javascript" src="~/js/pages/user-manager.js"></script>
+}
+
+@section modals{
+     <div class="modal fade" tabindex="-1" role="dialog" id="role_modal">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Create or Edit Role</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="modal-role-part">
+                                <input type="hidden" name="Id" />
+                                <div class="form-group">
+                                    <label>Role Name</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <i class="fas fa-envelope"></i>
+                                            </div>
+                                        </div>
+                                        <input type="text" class="form-control" placeholder="Role Name" name="Name">
+                                    </div>
+                                </div>
+                            </form>
+
+                        </div>
+                        <div class="modal-footer bg-whitesmoke br">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" id="save_role">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+}

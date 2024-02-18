@@ -1,0 +1,32 @@
+﻿@model ForgotPasswordModel
+@{
+    ViewData["Title"] = "Resend email confirmation |";
+}
+
+<div class="login-brand">
+    <img src="~/assets/img/logos/logo.jpeg" alt="logo" width="100" class="shadow-light rounded-circle">
+</div>
+<div class="card card-primary">
+    <div class="card-header">
+        <h4>Resend Confirmation Email</h4>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">We will resend a link to confirm your account</p>
+        <form method="POST">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-control" tabindex="1" autocomplete="username" aria-required="true" autofocus>
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-lg btn-block" tabindex="4">
+                    Resend
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

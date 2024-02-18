@@ -1,0 +1,40 @@
+﻿@{
+    Layout = "_Layout_Dashboard";
+}
+
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>Profile</h1>
+            <div class="section-header-breadcrumb">
+                <div class="breadcrumb-item active"><a href="javascript:void(0)">Dashboard</a></div>
+                <div class="breadcrumb-item">Profile</div>
+            </div>
+        </div>
+
+        <div class="section-body">
+            <h2 class="section-title">Hi, @User.Identity.Name</h2>
+            <p class="section-lead">Change information about yourself on this page.</p>
+
+            <div id="output-status"></div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Jump To</h4>
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-pills flex-column">
+                                <li class="nav-item"><a href="/Accounts/index" class="nav-link active">General</a></li>
+                                <li class="nav-item"><a href="/Accounts/CanChangePassword" class="nav-link">Password</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    @RenderBody()
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

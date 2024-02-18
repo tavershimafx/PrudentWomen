@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
+    <title>@ViewData["Title"] Prudent Women</title>
+
+    <!-- General CSS Files -->
+    <link asp-append-version="true" rel="stylesheet" href="~/assets/modules/bootstrap/css/bootstrap.min.css">
+    <link asp-append-version="true" rel="stylesheet" href="~/assets/modules/fontawesome/css/all.min.css">
+
+    <!-- CSS Libraries -->
+    <link asp-append-version="true" rel="stylesheet" href="~/assets/modules/bootstrap-social/bootstrap-social.css">
+    @await RenderSectionAsync("styles", required:false)
+    @await RenderSectionAsync("meta", required:false)
+    <!-- Template CSS -->
+    <link asp-append-version="true" rel="stylesheet" href="~/assets/css/style.min.css">
+    <link asp-append-version="true" rel="stylesheet" href="~/assets/css/components.min.css">
+</head>
+
+<body class="layout-4">
+
+    <div id="app">
+        <section class="section">
+            <div class="container mt-5">
+                <div class="row">
+                    <div class="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3 col-lg-6 offset-lg-3 col-xl-4 offset-xl-4">
+                       
+                        @RenderBody()
+
+                        <div class="simple-footer">
+                            Copyright &copy; Prudent women @DateTime.Now.Year
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- General JS Scripts -->
+    <script asp-append-version="true" src="~/assets/bundles/lib.vendor.bundle.js"></script>
+    <script asp-append-version="true" src="~/js/CodiePie.js"></script>
+    <!-- JS Libraies -->
+    <!-- Page Specific JS File -->
+    @await RenderSectionAsync("scripts", required: false)
+    <!-- Template JS File -->
+    <script asp-append-version="true" src="~/js/scripts.js"></script>
+    <script asp-append-version="true" src="~/js/custom.js"></script>
+</body>
+
+</html>

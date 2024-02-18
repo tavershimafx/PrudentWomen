@@ -1,0 +1,101 @@
+﻿@model RegisterViewModel
+@{
+    ViewData["Title"] = "Register |";
+}
+@section meta {
+   
+    <!-- No need to change anything here -->
+    <meta name="title" content="@ViewBag.Title - Prudent Women" />
+    <meta name="keywords" content="Prudent women cooperative website" />
+    <meta name="description" content="Prudent women cooperative website" />
+
+    <!-- fb & Whatsapp -->
+    <!-- Site Name, Title, and Description to be displayed -->
+    <meta property="og:site_name" content="Prudent Women">
+    <meta property="og:title" content="@ViewBag.Title - Prudent Women">
+    <meta property="og:description" content="Prudent women cooperative website">
+
+    <meta property="og:type" content="product" />
+    <!-- Size of image. Any size up to 300. Anything above 300px will not work in WhatsApp -->
+    <meta property="og:image:width" content="300">
+    <meta property="og:image:height" content="300">
+
+    <!-- Image to display -->
+    <meta property="og:image" content="@(Context.Request.GetFullHostingUrlRoot() +"/assets/img/logos/logo.jpeg")">
+
+    <!-- Website to visit when clicked in fb or WhatsApp-->
+    <meta property="og:url" content="@(Context.Request.GetFullHostingUrlRoot() + Context.Request.Path)">
+    <meta property="og:updated_time" content="@DateTime.Now.ToFileTime()">
+    <meta property="og:locale" content="en_US" />
+    <link rel="canonical" href="@(Context.Request.GetFullHostingUrlRoot() + Context.Request.Path)">
+}
+<div class="login-brand">
+    <img src="~/assets/img/logos/logo.jpeg" alt="logo" width="100" class="shadow-light rounded-circle">
+</div>
+<div class="card card-primary">
+    <div class="card-header">
+        <h4>Register</h4>
+    </div>
+    <div class="card-body">
+        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row">
+                <div class="form-group col-md-6">
+                    <label asp-for="FirstName"></label>
+                    <input asp-for="FirstName" autocomplete="on" aria-required="true" class="form-control">
+                    <span class="invalid-feedback" asp-validation-for="FirstName"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="LastName"></label>
+                    <input asp-for="LastName" class="form-control" autocomplete="on" aria-required="true">
+                    <span class="invalid-feedback" asp-validation-for="LastName"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-control" autocomplete="on" aria-required="true" autofocus>
+                <span class="invalid-feedback" asp-validation-for="Email"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="RegistrationCode"></label>
+                <input asp-for="RegistrationCode" class="form-control" autocomplete="on" aria-required="true" autofocus>
+                <span class="invalid-feedback" asp-validation-for="RegistrationCode"></span>
+            </div>
+            <div class="row">
+                <div class="form-group col-12">
+                    <label asp-for="Password" class="d-block"></label>
+                    <input asp-for="Password" autocomplete="new-password" aria-required="true" class="form-control pwstrength" data-indicator="pwindicator">
+                    <div id="pwindicator" class="pwindicator">
+                        <div class="bar"></div>
+                        <div class="label"></div>
+                    </div>
+                </div>
+                <div class="form-group col-12">
+                    <label asp-for="ConfirmPassword" class="d-block"></label>
+                    <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" name="agree" class="custom-control-input" id="agree">
+                    <label class="custom-control-label" for="agree">I agree with the terms and conditions</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-lg btn-block" id="registerSubmit">Register</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="mt-2 text-muted text-center">
+    <a asp-area="Authentication" asp-controller="Auth" asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl">Login</a> &nbsp; &nbsp; &nbsp;
+
+    <a asp-area="Authentication" asp-controller="Auth" asp-action="ResendEmailConfirmation">Resend email confirmation</a>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,120 @@
+﻿@model Monochrome.Module.Core.Services.PaginatedTable<RegCodeList>
+@{
+    ViewData["Title"] = "Registration Codes |";
+}
+
+<!-- Start app main Content -->
+<div class="main-content">
+    <div class="row row-deck">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Registration Codes</h4>
+                    <div class="card-header-action">
+                        <a href="javascript:void(0);" class="btn btn-info" id="new_codes">Generate New </a>
+                        <a href="javascript:void(0);" class="btn btn-success" id="download_cds">Download Unused</a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive table-invoice">
+                        <table class="table table-striped">
+                            <tr>
+                                <th>Code</th>
+                                <th>Status</th>
+                                <th>Date Used</th>
+                            </tr>
+                            @foreach(var item in Model.Data)
+                            {
+                                <tr>
+                                    <td>@item.Code</td>
+                                    <td><div class="badge badge-@(item.IsUsed? "success" : "info")">@(item.IsUsed ? "Used" : "Unused")</div></td>
+                                    <td>@(item.IsUsed? item.DateUsed : "N/A")</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+
+               <div class="card-footer">
+                    @{
+                        var totalPages = Model.TotalPages;
+                        var currentPage = Model.Page;
+                    }
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            <li class="page-item @(Model.Page <= 1? "disabled" : "")">
+                                <a class="page-link" href="/admin/regcode/index?page=1" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                    <span class="sr-only">First</span>
+                                </a>
+                            </li>
+                            <li class="page-item @(Model.Page <= 1? "disabled" : "")">
+                                <a class="page-link" href="/admin/regcode/index?page=@(Model.Page - 1)" aria-label="Previous">
+                                    <span aria-hidden="true">&lsaquo;</span>
+                                    <span class="sr-only">Previous</span>
+                                </a>
+                            </li>
+                            @{
+                                if (Model.Pages != null)
+                                {
+                                    for (int i = 0; i < Model.Pages.Length; i++)
+                                    {
+                                        <li class="page-item"><a class="page-link" href="/admin/regcode/index?page=@Model.Pages[i]">@Model.Pages[i]</a></li>
+                                    }
+                                }
+                                else
+                                {
+                                    <li class="page-item disabled"><a class="page-link" href="/admin/regcode/index?page=1">1</a></li>
+                                }
+                            }
+                            <li class="page-item  @(Model.Page *  Model.PageSize >= Model.TotalItems ? "disabled" : "")">
+                                <a class="page-link" href="/admin/regcode/index?page=@(Model.Page + 1)" aria-label="Next">
+                                    <span aria-hidden="true">&rsaquo;</span>
+                                    <span class="sr-only">Next</span>
+                                </a>
+                            </li>
+                            <li class="page-item  @(Model.Page *  Model.PageSize >= Model.TotalItems ? "disabled" : "")">
+                                <a class="page-link" href="/admin/regcode/index?page=@Model.TotalPages aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                    <span class="sr-only">Last</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+               </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script asp-append-version="true" type="text/javascript" src="~/js/pages/user-manager.js"></script>
+}
+
+@section modals{
+    <div class="modal fade" tabindex="-1" role="dialog" id="generate_modal">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generate New Registration Codes</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="genrt-code" action="/admin/regcode/Index?generate=true">
+                        <input type="hidden" name="generate" value="true" />
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="text" class="form-control" placeholder="Quantity to generate" name="qty">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-whitesmoke br">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="generate_cds">Generate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

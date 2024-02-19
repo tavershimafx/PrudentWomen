@@ -169,7 +169,7 @@ namespace Monochrome.Module.Core.Services.Email
                         client.Authenticate(username, password);
                     }
 
-                    await client.SendAsync(mailMessage);
+                    var snn = await client.SendAsync(mailMessage);
                     _logger.LogInformation($"Email sent from {mailMessage.From} to {mailMessage.To}.");
                     return true;
                 }

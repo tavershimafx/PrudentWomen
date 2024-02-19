@@ -1,13 +1,11 @@
 using MediatR;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Monochrome.Module.Core.DataAccess;
 using Monochrome.Module.Core.Events;
 using Monochrome.Module.Core.Models;
 using Monochrome.Module.Core.Services.Email;
-using PrudentWomen.Core.Events;
-using PrudentWomen.Core.Services;
+using Monochrome.Module.Core.Services;
 using Serilog;
 using System.Reflection;
 
@@ -48,6 +46,13 @@ namespace PrudentWomen
 
             #region Services
 
+            builder.Services.AddHttpClient();
+            //builder.Services.AddScoped<MediatR.ServiceFactory>(p => p.GetService);
+            builder.Services.AddScoped<IMediator, Mediator>();
+            //builder.Services.AddMediatR(config =>
+            //{
+                
+            //});
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
             builder.Services.AddScoped<IEmailSender, EmailSender>();
@@ -65,7 +70,7 @@ namespace PrudentWomen
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
 
-                options.SignIn.RequireConfirmedEmail = false;
+                options.SignIn.RequireConfirmedEmail = true;
                 options.SignIn.RequireConfirmedAccount = false;
                 options.SignIn.RequireConfirmedPhoneNumber = false;
 
@@ -89,7 +94,7 @@ namespace PrudentWomen
 
             #endregion
 
-            //CreateAdminAndRoles(builder.Services).Wait();
+            CreateAdminAndRoles(builder.Services).Wait();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

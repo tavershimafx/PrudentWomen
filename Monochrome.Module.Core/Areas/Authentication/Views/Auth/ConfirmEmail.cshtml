@@ -2,14 +2,14 @@
     ViewData["Title"] = "Confirm email |";
 }
 
-<div class="login-brand">
-    <img src="~/assets/img/logos/logo.jpeg" alt="logo" width="100" class="shadow-light rounded-circle">
-</div>
-<div class="card card-primary">
-    <div class="card-header">
-        <h4>Confirm Email</h4>
-    </div>
-    <div class="card-body">
-        <p class="text-muted">@ViewData["StatusMessage"]</p>
+<div class="page-error">
+    <div class="page-inner">
+        <h1 class="text-danger">Confirm Email</h1>
+        <div class="page-description">@ViewData["StatusMessage"]</div>
+        <div class="page-search">
+            <div class="mt-3">
+                <a href="/">Back to Login</a>
+            </div>
+        </div>
     </div>
 </div>

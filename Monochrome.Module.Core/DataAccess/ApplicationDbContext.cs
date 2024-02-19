@@ -16,9 +16,9 @@ namespace Monochrome.Module.Core.DataAccess
         // Note:
         // In order to add migration, you need to remove the IHttpContextAccessor from the
         // constructor away after that, return it back else audit columns will not be updated
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor contextAccessor) : base(options)
         {
-            //_contextAccessor = contextAccessor;, IHttpContextAccessor contextAccessor
+            _contextAccessor = contextAccessor;
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

@@ -27,7 +27,6 @@
   
   <ItemGroup>
     <ProjectReference Include="..\Monochrome.Module.Core\Monochrome.Module.Core.csproj" />
-    <ProjectReference Include="..\PrudentWomen.Core\PrudentWomen.Core.csproj" />
   </ItemGroup>
   
   <ItemGroup>

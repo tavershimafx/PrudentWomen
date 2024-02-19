@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PrudentWomen.Models;
-using PrudentWomen.Core.Services;
+using Monochrome.Module.Core.Services;
 using System.Diagnostics;
 
 namespace PrudentWomen.Controllers

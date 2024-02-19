@@ -110,25 +110,27 @@ namespace Monochrome.Module.Core.Areas.Accounts.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> CanChangePassword()
+        public async Task<IActionResult> ChangePassword()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                ModelState.AddModelError("Errors", $"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return View();
             }
 
             var hasPassword = await _userManager.HasPasswordAsync(user);
             if (!hasPassword)
             {
-                return Ok(new
-                {
-                    Message = "User does not have a password yet. Try creating a password before attempting a change of password.",
-                    CanChange = hasPassword
-                });
+                //new
+                //{
+                    //Message = "User does not have a password yet. Try creating a password before attempting a change of password.",
+                    //CanChange = hasPassword
+                //}
+                return View();
             }
 
-            return Ok();
+            return View();
         }
 
         /// <summary>
@@ -141,13 +143,14 @@ namespace Monochrome.Module.Core.Areas.Accounts.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return View(model);
             }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                ModelState.AddModelError("Errors", $"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return View(model);
             }
 
             var changePasswordResult = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
@@ -157,13 +160,14 @@ namespace Monochrome.Module.Core.Areas.Accounts.Controllers
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
-                return Ok();
+                return View(model);
             }
 
             await _signInManager.RefreshSignInAsync(user);
             _logger.LogInformation("User changed their password successfully.");
 
-            return Ok("Your password has been changed.");
+            ModelState.AddModelError("Errors", "Your password has been changed.");
+            return View();
         }
 
         /// <summary>

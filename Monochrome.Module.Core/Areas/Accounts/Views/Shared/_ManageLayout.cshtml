@@ -1,5 +1,9 @@
 ﻿@{
-    Layout = "_Layout_Dashboard";
+    Layout = "/Areas/Admin/Views/Shared/_Layout_Dashboard.cshtml";
+}
+
+@section styles{
+    @await RenderSectionAsync("styles", required: false)
 }
 
 <div class="main-content">
@@ -25,8 +29,8 @@
                         </div>
                         <div class="card-body">
                             <ul class="nav nav-pills flex-column">
-                                <li class="nav-item"><a href="/Accounts/index" class="nav-link active">General</a></li>
-                                <li class="nav-item"><a href="/Accounts/CanChangePassword" class="nav-link">Password</a></li>
+                                <li class="nav-item"><a href="/Accounts/Account/index" class="nav-link active">General</a></li>
+                                <li class="nav-item"><a href="/Accounts/Account/ChangePassword" class="nav-link">Password</a></li>
                             </ul>
                         </div>
                     </div>
@@ -38,3 +42,11 @@
         </div>
     </section>
 </div>
+
+@section scripts{
+    @await RenderSectionAsync("scripts", required: false)
+}
+
+@section modals{
+    @await RenderSectionAsync("modals", required: false)
+}

@@ -77,7 +77,7 @@ namespace Monochrome.Module.Core.Areas.Authentication.Controllers
                     _logger.LogInformation("User logged in.");
                     if (await _userManager.IsInRoleAsync(user, "Customer"))
                     {
-                        returnUrl ??= Url.Action("Index", "UserDashboard", new { area = "Core" });
+                        returnUrl ??= Url.Action("Index", "UserDashboard", new { area = "Admin" });
                     }
                     else
                     {

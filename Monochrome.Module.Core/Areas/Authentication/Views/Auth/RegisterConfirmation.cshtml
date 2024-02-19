@@ -3,17 +3,15 @@
     ViewData["Title"] = "Register confirmation |";
 }
 
-
-<div class="login-brand">
-    <img src="~/assets/img/logos/logo.jpeg" alt="logo" width="100" class="shadow-light rounded-circle">
-</div>
-<div class="card card-primary">
-    <div class="card-header">
-        <h4>Register Confirmation</h4>
-    </div>
-    <div class="card-body">
-        <h1>@Model.Email</h1>
-        <p>Your Prudent Number is</p>
-        <p class="text-muted">Please check your email to confirm your account.</p>
+<div class="page-error">
+    <div class="page-inner">
+        <h1 class="text-danger">@Model.Email</h1>
+        <div class="page-description">Keep this number safe as this is your login username and your transaction reference number.</div>
+        <p class="text-muted">Check your email to confirm your account.</p>
+        <div class="page-search">
+            <div class="mt-3">
+                <a href="/">Back to Login</a>
+            </div>
+        </div>
     </div>
 </div>

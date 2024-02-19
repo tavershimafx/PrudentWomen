@@ -1,0 +1,24 @@
+﻿@using Monochrome.Module.Core.Models
+@inject Microsoft.AspNetCore.Identity.SignInManager<User> signInManager
+@inject Microsoft.AspNetCore.Identity.UserManager<User> userManager
+
+@{
+    var user = await userManager.GetUserAsync(User);
+    if ((await userManager.IsInRoleAsync(user, "Admin")) || (await userManager.IsInRoleAsync(user, "SuperAdmin")))
+    {
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard</li>
+            <li><a class="nav-link" href="/admin/dashboard/index"><i class="fas fa-pencil-ruler"></i> <span>Home</span></a></li>
+            <li class="menu-header">Starter</li>
+            <li><a class="nav-link" href="/admin/regcode/index"><i class="far fa-square"></i> <span>Registration Codes</span></a></li>
+            <li><a class="nav-link" href="/admin/users/list"><i class="fas fa-th-large"></i> <span>Users</span></a></li>
+        </ul>
+    }
+    else
+    {
+        <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard</li>
+            <li><a class="nav-link" href="/admin/userdashboard/index"><i class="fas fa-pencil-ruler"></i> <span>Home</span></a></li>
+        </ul>
+    }
+}

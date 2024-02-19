@@ -7,8 +7,6 @@ using Monochrome.Module.Core.Areas.Admin.ViewModels;
 using Monochrome.Module.Core.Services;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
-using Newtonsoft.Json.Serialization;
-using Newtonsoft.Json;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
@@ -26,25 +24,8 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             _regCodeRepo = regCodeRepo;
         }
 
-        public IActionResult Index(bool generate, int qty, int page = 1)
+        public IActionResult Index(int page = 1)
         {
-            if (generate)
-            {
-                List<UserRegCode> cds = new();
-                for (int i = 0; i < qty; i++)
-                {
-                    var code = new UserRegCode();
-                    while ((_regCodeRepo.AsQueryable().FirstOrDefault(k => k.Id == code.Id) != null) || cds.Any(k => k.Id == code.Id))
-                    {
-                        code.Id = UserRegCode.GenerateCode();
-                    }
-                    cds.Add(code);
-                }
-
-                _regCodeRepo.InsertRange(cds);
-                _regCodeRepo.SaveChanges();
-            }
-
             var codes = _regCodeRepo.AsQueryable()
                 .OrderBy(k => k.IsUsed)
                 .Select(k => new RegCodeList
@@ -140,6 +121,26 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             }
             
             return View(model);
+        }
+
+        [HttpPost]
+        public IActionResult Generate(int qty)
+        {
+            List<UserRegCode> cds = new();
+            for (int i = 0; i < qty; i++)
+            {
+                var code = new UserRegCode();
+                while ((_regCodeRepo.AsQueryable().FirstOrDefault(k => k.Id == code.Id) != null) || cds.Any(k => k.Id == code.Id))
+                {
+                    code.Id = UserRegCode.GenerateCode();
+                }
+                cds.Add(code);
+            }
+
+            _regCodeRepo.InsertRange(cds);
+            _regCodeRepo.SaveChanges();
+
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult DeleteAll()

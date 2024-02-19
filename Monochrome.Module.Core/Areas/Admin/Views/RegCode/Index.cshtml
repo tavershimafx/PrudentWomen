@@ -35,7 +35,7 @@
                     </div>
                 </div>
 
-               <div class="card-footer">
+               <div class="card-footer text-right">
                     @{
                         var totalPages = Model.TotalPages;
                         var currentPage = Model.Page;
@@ -102,7 +102,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="genrt-code" action="/admin/regcode/Index?generate=true">
+                    <form method="post" id="genrt-code" action="/admin/regcode/generate">
                         <input type="hidden" name="generate" value="true" />
                         <div class="form-group">
                             <label>Quantity</label>

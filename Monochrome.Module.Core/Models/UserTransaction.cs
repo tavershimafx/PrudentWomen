@@ -6,5 +6,7 @@
         public decimal Amount { get; set; }
         public DateTimeOffset Date { get; set; }
         public decimal Balance { get; set; }
+        public long AccountId { get; set; }
+        public UserAccount UserAccount { get; set; }
     }
 }

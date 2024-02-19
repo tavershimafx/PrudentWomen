@@ -4,21 +4,22 @@ using Microsoft.AspNetCore.Mvc;
 using Monochrome.Module.Core.DataAccess;
 using Microsoft.AspNetCore.Authorization;
 using Monochrome.Module.Core.Services;
+using Monochrome.Module.Core.Areas.Admin.ViewModels;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
     [Area("Admin")]
     [Authorize(Roles = "Customer")]
-    public class UserDashboardController : MvcBaseController
+    public class UserLoansController : MvcBaseController
     {
-        private readonly IRepository<UserTransaction> _transactionRepo;
+        private readonly IRepository<Loan> _loanRepo;
         private readonly IRepository<UserAccount> _userAccount;
         private readonly IRepository<string, User> _userRepo;
 
-        public UserDashboardController(IRepository<UserTransaction> transactionRepo, IRepository<UserAccount> userAccount,
+        public UserLoansController(IRepository<Loan> loanRepo, IRepository<UserAccount> userAccount,
             IRepository<string, User> userRepo)
         {
-            _transactionRepo = transactionRepo;
+            _loanRepo = loanRepo;
             _userAccount = userAccount;
             _userRepo = userRepo;
         }
@@ -27,19 +28,16 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         {
             var user = _userRepo.AsQueryable().FirstOrDefault(n => n.UserName == User.Identity.Name);
             var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
-            var transactions = _transactionRepo.AsQueryable()
-                .Where(n => n.AccountId == account.Id)
-                .OrderByDescending(k => k.Date);
+            var loans = _loanRepo.AsQueryable()
+                .Where(n => n.UserAccountId == account.Id)
+                .OrderByDescending(k => k.DateApproved);
 
-            var model = new PaginatedTable<UserTransaction>()
+            var model = new PaginatedTable<Loan>()
             {
-                TotalItems = transactions.Count()
+                TotalItems = loans.Count()
             };
 
-            ViewData["Balance"] = account.Balance.ToString("N2");
-            ViewData["Loan"] = account.Balance.ToString("N2");
-
-            model.Data = transactions.Skip((size * page) - size).Take(size);
+            model.Data = loans.Skip((size * page) - size).Take(size);
 
             model.PageSize = size;
             model.TotalPages = (int)Math.Ceiling((double)model.TotalItems / size);
@@ -120,6 +118,17 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             }
 
             return View(model);
+        }
+
+        public IActionResult Apply()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult Apply(LoanApplyForm model)
+        {
+            return View();
         }
     }
 }

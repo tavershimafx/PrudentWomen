@@ -94,7 +94,7 @@ namespace PrudentWomen
 
             #endregion
 
-            CreateAdminAndRoles(builder.Services).Wait();
+            //CreateAdminAndRoles(builder.Services).Wait();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

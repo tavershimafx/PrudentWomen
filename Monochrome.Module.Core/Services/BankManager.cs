@@ -1,11 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Monochrome.Module.Core.DataAccess;
 using Monochrome.Module.Core.Extensions;
 using Monochrome.Module.Core.Models;
 using Newtonsoft.Json;
-using System;
-using System.Security.Policy;
 using System.Text.RegularExpressions;
 
 namespace Monochrome.Module.Core.Services
@@ -40,14 +37,17 @@ namespace Monochrome.Module.Core.Services
                     var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == username);
                     if (user != null)
                     {
+                        var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
                         _userTransaction.Insert(new UserTransaction()
                         {
+                            AccountId = account.Id,
                             Amount = transaction.amount,
                             Type = transaction.type,
                             Date = DateTime.Parse(transaction.date),
                             Balance = 0
                         });
 
+                        account.Balance += transaction.amount;
                         transaction.IsIdentified = true;
                     }
                 }

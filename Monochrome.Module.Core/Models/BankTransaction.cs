@@ -15,15 +15,14 @@
         public string next { get; set; }
     }
 
-    public class BankTransaction
+    public class BankTransaction : BaseModel<string>
     {
-        public string id { get; set; }
-        public string type { get; set; }
-        public decimal amount { get; set; }
-        public string narration { get; set; }
-        public string date { get; set; }
-        public decimal balance { get; set; }
-        public string currency { get; set; }
+        public string Type { get; set; }
+        public decimal Amount { get; set; }
+        public string Narration { get; set; }
+        public string Date { get; set; }
+        public decimal Balance { get; set; }
+        public string Currency { get; set; }
         public bool IsIdentified { get; set; }
     }
 }

@@ -94,7 +94,7 @@ namespace PrudentWomen
 
             #endregion
 
-            //CreateAdminAndRoles(builder.Services).Wait();
+            CreateAdminAndRoles(builder.Services).Wait();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -175,6 +175,33 @@ namespace PrudentWomen
                 await userManager.AddToRoleAsync(superUser, "SuperAdmin");
             }
 
+            var appSetting = serviceProvider.GetRequiredService<IRepository<string, ApplicationSetting>>();
+            
+            // account id
+            if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.AccountId) == null)
+            {
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.AccountId, Value = "" });
+            }
+            
+            // tax percent
+            if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.TaxPercent) == null)
+            {
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.TaxPercent, Value = "30" });
+            }
+
+            // secret key
+            if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.SecretKey) == null)
+            {
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.SecretKey, Value = "" });
+            }
+            
+            // public key
+            if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.PublicKey) == null)
+            {
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.PublicKey, Value = "" });
+            }
+            appSetting.SaveChanges();
+            
             return true;
         }
     }

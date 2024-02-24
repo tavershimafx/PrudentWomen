@@ -1,0 +1,104 @@
+﻿@using Monochrome.Module.Core.Models
+@using Monochrome.Module.Core.DataAccess
+@inject IRepository<string, ApplicationSetting> _appSetting
+@model IEnumerable<ApplicationSetting>
+@{
+    ViewData["Title"] = "Application Settings |";
+}
+
+@section styles{
+    <script type="application/javascript" src="https://connect.withmono.com/connect.js"></script>
+}
+<!-- Start app main Content -->
+<div class="main-content">
+    <div class="row">
+        <div class="col-md-6">
+            <form action="/admin/appsetting/Index" method="post">
+                <div class="card" id="settings-card">
+                    <div class="card-header">
+                        <h4>Application Settings</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">General settings such as, connected account Id, tax and so on.</p>
+                        @foreach(var item in Model)
+                        {
+                            <div class="form-group row align-items-center">
+                                <label for="site-title" class="form-control-label col-sm-3 text-md-right">@item.Id</label>
+                                <div class="col-sm-6 col-md-9">
+                                    <input type="text" name="@item.Id" value="@item.Value" class="form-control">
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-footer bg-whitesmoke text-md-right">
+                        <button class="btn btn-primary" type="submit">Save Changes</button>
+                        <button class="btn btn-secondary" type="button">Reset</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <div class="card-footer bg-whitesmoke text-md-right">
+                <button class="btn btn-primary" type="button" id="configure-mono">Configure Account</button>
+                <button class="btn btn-secondary" type="button" id="disconnect">Remove Account</button>
+            </div>
+        </div>
+    </div>
+</div>
+@{
+    var publicKey = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == Monochrome.Module.Core.Services.ApplicationConstants.PublicKey);
+}
+@section scripts{
+
+    <script type="application/javascript">
+        var connect;
+        var config = {
+          key: "@publicKey.Value",
+          onSuccess: function (response) {
+            var authorisationToken = response.code;
+            window.location = `/admin/appsetting/authenticate/?token=${authorisationToken}`
+          },
+          onClose: function () {
+            console.log('user closed the widget.')
+          }
+        };
+        connect = new Connect(config);
+        connect.setup();
+        $("#configure-mono").on('click', (e)=>{
+            e.preventDefault()
+            connect.open()
+        })
+         $("#disconnect").on('click', (e)=>{
+            $("#disconnect_modal").modal("show")
+        })
+    </script>
+
+}
+
+@section modals{
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="disconnect_modal">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Disconnect Account</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <p>Are you sure you want to disconnect your bank account?</p>
+                       
+                    </form>
+
+                </div>
+                <div class="modal-footer bg-whitesmoke br">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <a href="/admin/appsetting/DisconnectAccount" class="btn btn-danger">Disconnect</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}

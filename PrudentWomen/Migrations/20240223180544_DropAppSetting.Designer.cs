@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Monochrome.Module.Core.DataAccess;
 
@@ -11,9 +12,10 @@ using Monochrome.Module.Core.DataAccess;
 namespace PrudentWomen.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240223180544_DropAppSetting")]
+    partial class DropAppSetting
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,40 +113,6 @@ namespace PrudentWomen.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("Mono.UserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("Monochrome.Module.Core.Models.ApplicationSetting", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CreatedById")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTimeOffset>("DateCreated")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<DateTimeOffset?>("LastUpdated")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("UpdatedById")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("UpdatedById");
-
-                    b.ToTable("Prudent.ApplicationSettings", (string)null);
                 });
 
             modelBuilder.Entity("Monochrome.Module.Core.Models.BankTransaction", b =>
@@ -573,21 +541,6 @@ namespace PrudentWomen.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Monochrome.Module.Core.Models.ApplicationSetting", b =>
-                {
-                    b.HasOne("Monochrome.Module.Core.Models.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById");
-
-                    b.HasOne("Monochrome.Module.Core.Models.User", "UpdatedBy")
-                        .WithMany()
-                        .HasForeignKey("UpdatedById");
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("Monochrome.Module.Core.Models.Loan", b =>

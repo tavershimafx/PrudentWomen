@@ -8,17 +8,14 @@ namespace PrudentWomen.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly IBankManager _bankManager;
 
         public HomeController(ILogger<HomeController> logger, IBankManager bankManager)
         {
             _logger = logger;
-            _bankManager = bankManager;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            await _bankManager.FetchTransactions();
             return View();
         }
 

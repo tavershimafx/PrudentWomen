@@ -1,7 +1,11 @@
-﻿namespace Monochrome.Module.Core.Services
+﻿using Monochrome.Module.Core.Models;
+
+namespace Monochrome.Module.Core.Services
 {
     public interface IBankManager
     {
-        Task FetchTransactions();
+        Task SynchronizeWithMono(long syncId);
+
+        Task<bool> AuthenticateToken(string token);
     }
 }

@@ -7,33 +7,7 @@
 // Area Datetime
 $(document).ready(function() {
     var options = {
-        annotations: {
-            yaxis: [{
-                y: 30,
-                borderColor: '#5a5278',
-                label: {
-                    show: true,
-                    text: 'Support',
-                    style: {
-                        color: "#fff",
-                        background: '#5a5278'
-                    }
-                }
-            }],
-            xaxis: [{
-            x: new Date('14 Nov 2012').getTime(),
-            borderColor: '#5a5278',
-            yAxisIndex: 0,
-            label: {
-                show: true,
-                text: 'Rally',
-                style: {
-                    color: "#fff",
-                    background: '#5a5278'
-                }
-            }
-        }]
-        },
+        
         chart: {
             type: 'area',
             height: 288,

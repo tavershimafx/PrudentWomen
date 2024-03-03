@@ -22,11 +22,9 @@
                         <p class="text-muted">General settings such as, connected account Id, tax and so on.</p>
                         @foreach(var item in Model)
                         {
-                            <div class="form-group row align-items-center">
-                                <label for="site-title" class="form-control-label col-sm-3 text-md-right">@item.Id</label>
-                                <div class="col-sm-6 col-md-9">
-                                    <input type="text" name="@item.Id" value="@item.Value" class="form-control">
-                                </div>
+                            <div class="form-group">
+                                <label>@item.Id</label>
+                                <input type="text" name="@item.Id" value="@item.Value" class="form-control">
                             </div>
                         }
                     </div>
@@ -38,9 +36,12 @@
             </form>
         </div>
         <div class="col-md-6">
-            <div class="card-footer bg-whitesmoke text-md-right">
-                <button class="btn btn-primary" type="button" id="configure-mono">Configure Account</button>
-                <button class="btn btn-secondary" type="button" id="disconnect">Remove Account</button>
+            <div class="card">
+               <div class="card-body">
+                    <button class="btn btn-primary" type="button" id="configure-mono">Configure Account</button>
+                    <button class="btn btn-secondary" type="button" id="disconnect">Disconnect Account</button>
+                    <a class="btn btn-primary" href="/admin/appsetting/SynchronizeTransactions">Synchronize</a>
+               </div>
             </div>
         </div>
     </div>
@@ -62,13 +63,14 @@
             console.log('user closed the widget.')
           }
         };
+
         connect = new Connect(config);
         connect.setup();
         $("#configure-mono").on('click', (e)=>{
             e.preventDefault()
             connect.open()
         })
-         $("#disconnect").on('click', (e)=>{
+        $("#disconnect").on('click', (e)=>{
             $("#disconnect_modal").modal("show")
         })
     </script>

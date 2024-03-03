@@ -1,4 +1,7 @@
-﻿@{
+﻿@using Newtonsoft.Json
+@using Monochrome.Module.Core.Models
+@model Monochrome.Module.Core.Areas.Admin.ViewModels.DashboardViewModel
+@{
     ViewData["Title"] = "Dashboard |";
 }
 
@@ -25,7 +28,7 @@
                             <h4>Total Admins</h4>
                         </div>
                         <div class="card-body">
-                            10
+                            @Model.TotalAdmins
                         </div>
                     </div>
                 </div>
@@ -40,7 +43,7 @@
                             <h4>Balance</h4>
                         </div>
                         <div class="card-body">
-                            N420,000
+                            ₦@Model.Balance.ToString("N2")
                         </div>
                     </div>
                 </div>
@@ -55,7 +58,7 @@
                             <h4>Loan Amount</h4>
                         </div>
                         <div class="card-body">
-                            N120,000
+                            ₦@Model.LoanAmount.ToString("N2")
                         </div>
                     </div>
                 </div>
@@ -70,7 +73,7 @@
                             <h4>Total Loans</h4>
                         </div>
                         <div class="card-body">
-                            47
+                            @Model.TotalLoans
                         </div>
                     </div>
                 </div>
@@ -85,39 +88,121 @@
                             <button class="btn btn-sm btn-outline-secondary mr-1" id="one_month">1M</button>
                             <button class="btn btn-sm btn-outline-secondary mr-1" id="six_months">6M</button>
                             <button class="btn btn-sm btn-outline-secondary mr-1 active" id="one_year">1Y</button>
-                            <button class="btn btn-sm btn-outline-secondary mr-1" id="ytd">YTD</button>
                             <button class="btn btn-sm btn-outline-secondary" id="all">ALL</button>
                         </div>
                     </div>
                     <div class="card-body">
-                        @*<div class="statistic-details mb-sm-4">
-                            <div class="statistic-details-item">
-                                <span class="text-muted"><span class="text-primary"><i class="fas fa-caret-up"></i></span> 7%</span>
-                                <div class="detail-value">$243</div>
-                                <div class="detail-name">Today's Sales</div>
-                            </div>
-                            <div class="statistic-details-item">
-                                <span class="text-muted"><span class="text-danger"><i class="fas fa-caret-down"></i></span> 23%</span>
-                                <div class="detail-value">$2,902</div>
-                                <div class="detail-name">This Week's Sales</div>
-                            </div>
-                            <div class="statistic-details-item">
-                                <span class="text-muted"><span class="text-primary"><i class="fas fa-caret-up"></i></span>9%</span>
-                                <div class="detail-value">$12,821</div>
-                                <div class="detail-name">This Month's Sales</div>
-                            </div>
-                            <div class="statistic-details-item">
-                                <span class="text-muted"><span class="text-primary"><i class="fas fa-caret-up"></i></span> 19%</span>
-                                <div class="detail-value">$92,142</div>
-                                <div class="detail-name">This Year's Sales</div>
-                            </div>
-                        </div>*@
+                      
                         <div id="apex-timeline-chart"></div>
                     </div>
                 </div>
             </div>
         </div>
        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Pending Loans</h4>
+                        <div class="card-header-action">
+                            <a href="/admin/loans/index" class="btn btn-primary">View All <i class="fas fa-chevron-right"></i></a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-md v_center">
+                                <tr>
+                                    <th>#</th>
+                                    <th>User</th>
+                                    <th>Amount Requested</th>
+                                    <th>Date Applied</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                                @{
+                                    if (!Model.Data.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="6" class="text-center">No PendingLoans</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        int x = 0;
+                                        foreach (var loan in Model.Loans)
+                                        {
+                                            x++;
+                                            <tr>
+                                                <td>@x</td>
+                                                <td>@loan.UserAccount</td>
+                                                <td>₦@loan.AmountRequested.ToString("N2")</td>
+                                                <td>@loan.DateApplied.ToString("dd MMM yyyy")</td>
+                                                <td>
+                                                    @switch (loan.Status)
+                                                    {
+                                                        case LoanApplyStatus.Approved:
+                                                            <div class="badge badge-success">Approved</div>
+                                                            break;
+                                                        case LoanApplyStatus.Pending:
+                                                            <div class="badge badge-warning">Pending</div>
+                                                            break;
+                                                        case LoanApplyStatus.Rejected:
+                                                            <div class="badge badge-danger">Rejected</div>
+                                                            break;
+                                                        default:
+                                                            break;
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <i class="fas fa-ellipsis-v" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+                                                        <div class="dropdown-menu">
+                                                            <a class="dropdown-item" href="/admin/loans/details/?id=@loan.Id">View</a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-hero">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="far fa-question-circle"></i>
+                        </div>
+                        <h4>₦@Model.TotalOverdue.ToString("N2")</h4>
+                        <div class="card-description">Is overdue for payment</div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="tickets-list">
+                            <a href="javascript:void(0);" class="ticket-item">
+                                <div class="ticket-title">
+                                    <h4>Highest Balance</h4>
+                                </div>
+                                <div class="ticket-info">
+                                    <div>₦@Model.HighestBalance.GetValueOrDefault().ToString("N2")</div>
+                                </div>
+                            </a>
+                            <a href="javascript:void(0);" class="ticket-item">
+                                <div class="ticket-title">
+                                    <h4>Lowest Balance</h4>
+                                </div>
+                                <div class="ticket-info">
+                                    <div>₦@Model.LowestBalance.GetValueOrDefault().ToString("N2")</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
     </section>
 </div>
 
@@ -128,5 +213,145 @@
 
 @section modals{
     <!-- Page Specific JS File -->
-    <script src="~/js/pages/index-0.js"></script>
+    <script>
+        $(document).ready(function () {
+            var options = {
+
+                chart: {
+                    type: 'area',
+                    height: 288,
+                    toolbar: {
+                        show: false,
+                    },
+                },
+                colors: ['#5a5278'],
+                dataLabels: {
+                    enabled: false
+                },
+
+                series: [{
+                    data: @JsonConvert.SerializeObject(Model.Data)
+                },
+
+                ],
+                markers: {
+                    size: 0,
+                    style: 'hollow',
+                },
+                xaxis: {
+                    type: 'datetime',
+                    min: new Date('@Model.FromOneYearDate.ToString("dd MMM yyy")').getTime(),
+                    tickAmount: 6,
+                    show: false,
+                },
+                tooltip: {
+                    x: {
+                        format: 'dd MMM yyyy'
+                    }
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.9,
+                        stops: [0, 100]
+                    }
+                },
+                stroke: {
+                    show: true,
+                    curve: 'smooth',
+                    width: 2,
+                },
+                grid: {
+                    yaxis: {
+                        lines: {
+                            show: false,
+                        }
+                    },
+                },
+            }
+
+            var chart = new ApexCharts(
+                document.querySelector("#apex-timeline-chart"),
+                options
+            );
+
+            chart.render();
+
+            var resetCssClasses = function (activeEl) {
+                var els = document.querySelectorAll("button");
+                Array.prototype.forEach.call(els, function (el) {
+                    el.classList.remove('active');
+                });
+
+                activeEl.target.classList.add('active')
+            }
+        @if(Model.MaximumDate != default)
+        {
+            if (Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays >= 30)
+            {
+                <text>
+                    document.querySelector("#one_month").addEventListener('click', function (e) {
+                        resetCssClasses(e)
+                        chart.updateOptions({
+                            xaxis: {
+                                min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(30)).ToString("dd MMM yyy")').getTime(),
+                                max: new Date('@Model.MaximumDate.ToString("dd MMM yyy")').getTime(),
+                            }
+                        })
+                    })
+                </text>
+            }
+
+            if (Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays >= 180)
+            {
+                <text>
+                    document.querySelector("#six_months").addEventListener('click', function (e) {
+                    resetCssClasses(e)
+                    chart.updateOptions({
+                        xaxis: {
+                            min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(180)).ToString("dd MMM yyy")').getTime(),
+                            max: new Date('@Model.MaximumDate.ToString("dd MMM yyy")').getTime(),
+                            }
+                        })
+                    })
+                </text>
+            }
+
+            if (Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays >= 365)
+            {
+                <text>
+                      document.querySelector("#one_year").addEventListener('click', function (e) {
+                        resetCssClasses(e)
+                        chart.updateOptions({
+                            xaxis: {
+                                min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(365)).ToString("dd MMM yyy")').getTime(),
+                                max: new Date('@Model.MaximumDate.ToString("dd MMM yyy")').getTime(),
+                            }
+                        })
+                    })
+                </text>
+            }
+        }
+        
+            
+            
+        
+            
+            
+            
+            document.querySelector("#all").addEventListener('click', function (e) {
+                resetCssClasses(e)
+                chart.updateOptions({
+                    xaxis: {
+                        min: undefined,
+                        max: undefined,
+                    }
+                })
+            })
+           
+        });
+
+    </script>
 }

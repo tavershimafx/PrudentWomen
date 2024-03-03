@@ -28,7 +28,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             var user = _userRepo.AsQueryable().FirstOrDefault(n => n.UserName == User.Identity.Name);
             var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
             var transactions = _transactionRepo.AsQueryable()
-                .Where(n => n.AccountId == account.Id)
+                .Where(n => n.UserAccountId == account.Id)
                 .OrderByDescending(k => k.Date);
 
             var model = new PaginatedTable<UserTransaction>()

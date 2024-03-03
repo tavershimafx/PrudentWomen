@@ -1,6 +1,8 @@
-﻿@model IEnumerable<UserListItemVm>
+﻿@using Monochrome.Module.Core.Models
+@model Monochrome.Module.Core.Services.PaginatedTable<UserListItemVm>
 @{
     ViewData["Title"] = "Users |";
+    var search = ViewData["Search"];
 }
 
 <!-- Start app main Content -->
@@ -11,11 +13,11 @@
                 <div class="card-header">
                     <h4>Users</h4>
                     <div class="card-header-form">
-                        <form method="post" action="">
+                        <form method="get" action="/admin/users/list">
                             <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Search">
+                                <input type="text" name="search" class="form-control" placeholder="Search">
                                 <div class="input-group-btn">
-                                    <button class="btn btn-primary"><i class="fas fa-search"></i></button>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
                                 </div>
                             </div>
                         </form>
@@ -25,29 +27,6 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <div class="float-left">
-                        <div class="selectric-wrapper selectric-form-control selectric-selectric">
-                            <div class="selectric-hide-select">
-                                <select class="form-control selectric" tabindex="-1">
-                                    <option>Action For Selected</option>
-                                    <option>Move to Draft</option>
-                                    <option>Move to Pending</option>
-                                    <option>Delete Pemanently</option>
-                                </select>
-                            </div><div class="selectric"><span class="label">Action For Selected</span><b class="button">▾</b></div><div class="selectric-items" tabindex="-1"><div class="selectric-scroll"><ul><li data-index="0" class="selected">Action For Selected</li><li data-index="1" class="">Move to Draft</li><li data-index="2" class="">Move to Pending</li><li data-index="3" class="last">Delete Pemanently</li></ul></div></div><input class="selectric-input" tabindex="0">
-                        </div>
-                    </div>
-                    <div class="float-right">
-                        <form>
-                            <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Search">
-                                <div class="input-group-append">
-                                    <button class="btn btn-primary"><i class="fas fa-search"></i></button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="clearfix mb-3"></div>
                     <div class="table-responsive table-invoice">
                         <table class="table table-striped">
                             <tr>
@@ -60,13 +39,42 @@
                                 <th>Date Created</th>
                                 <th>Action</th>
                             </tr>
-                            @foreach(var item in Model)
+                            @foreach(var item in Model.Data)
                             {
                                 <tr>
                                     <td data-username="@item.Username">@item.Username</td>
                                     <td>@item.FullName</td>
                                     <td data-email="@item.Email" class="font-weight-600">@item.Email</td>
-                                    <td><div class="badge badge-@(item.Status == Monochrome.Module.Core.Models.UserStatus.Active? "success" : "warning")">@item.Status</div></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            @switch (item.Status)
+                                            {
+                                                case UserStatus.Active:
+                                                    <div class="badge badge-success" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@item.Status</div>
+                                                    break;
+                                                case UserStatus.Deleted:
+                                                    <div class="badge badge-danger" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@item.Status</div>
+                                                    break;
+                                                case UserStatus.Dormant:
+                                                    <div class="badge badge-info" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@item.Status</div>
+                                                    break;
+                                                case UserStatus.Suspended:
+                                                    <div class="badge badge-warning" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@item.Status</div>
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+                                            <div class="dropdown-menu">
+                                                @{
+                                                    var stats = ViewBag.Status;
+                                                    foreach(var status in stats)
+                                                    {
+                                                        <a class="dropdown-item" href="javascript:void(0)" data-status="@status" data-id="@item.Id">@status</a>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
                                     <td><div class="badge badge-warning">@string.Join(",", item.Roles)</div></td>
                                     <td><div class="badge badge-@(item.EmailConfirmed? "info" : "danger")"><i class="fa fa-@(item.EmailConfirmed ? "check" : "times")"></i></div></td>
                                     <td>@item.DateCreated.ToString("dd MMM yyyy")</td>
@@ -85,15 +93,55 @@
                         </table>
                     </div>
                 </div>
+                <div class="card-footer text-right">
+                    @{
+                        var totalPages = Model.TotalPages;
+                        var currentPage = Model.Page;
+                    }
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            <li class="page-item @(Model.Page <= 1? "disabled" : "")">
+                                <a class="page-link" href="/admin/users/list?page=1&search=@search" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                    <span class="sr-only">First</span>
+                                </a>
+                            </li>
+                            <li class="page-item @(Model.Page <= 1? "disabled" : "")">
+                                <a class="page-link" href="/admin/users/list?page=@(Model.Page - 1)&search=@search" aria-label="Previous">
+                                    <span aria-hidden="true">&lsaquo;</span>
+                                    <span class="sr-only">Previous</span>
+                                </a>
+                            </li>
+                            @{
+                                if (Model.Pages != null)
+                                {
+                                    for (int i = 0; i < Model.Pages.Length; i++)
+                                    {
+                                        <li class="page-item"><a class="page-link" href="/admin/users/list?page=@Model.Pages[i]&search=@search">@Model.Pages[i]</a></li>
+                                    }
+                                }
+                                else
+                                {
+                                    <li class="page-item disabled"><a class="page-link" href="/admin/users/list?page=1&search=@search">1</a></li>
+                                }
+                            }
+                            <li class="page-item  @(Model.Page *  Model.PageSize >= Model.TotalItems ? "disabled" : "")">
+                                <a class="page-link" href="/admin/users/list?page=@(Model.Page + 1)&search=@search" aria-label="Next">
+                                    <span aria-hidden="true">&rsaquo;</span>
+                                    <span class="sr-only">Next</span>
+                                </a>
+                            </li>
+                            <li class="page-item  @(Model.Page *  Model.PageSize >= Model.TotalItems ? "disabled" : "")">
+                                <a class="page-link" href="/admin/users/list?page=@Model.TotalPages&search=@search" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                    <span class="sr-only">Last</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
-    
-        @*<div class="alert alert-danger alert-dismissible show fade">
-            <div class="alert-body">
-                <button class="close" data-dismiss="alert"><span>&times;</span></button>
-                This is a dark alert. This is a dark alert. This is a dark alert. 
-            </div>
-        </div>*@
     </div>
 </div>
 

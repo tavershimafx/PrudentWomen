@@ -21,7 +21,7 @@ namespace Monochrome.Module.Core.Models
         public static string GenerateUserNumber()
         {
             Random rand = new();
-            return $"PWC-{rand.Next(10000, 100_000)}";
+            return $"PWC{rand.Next(10000, 100_000)}";
         }
 
         public string FirstName { get; set; }

@@ -149,31 +149,57 @@ namespace PrudentWomen.Migrations
 
             modelBuilder.Entity("Monochrome.Module.Core.Models.BankTransaction", b =>
                 {
-                    b.Property<string>("id")
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Balance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedById")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Currency")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("Date")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<bool>("IsIdentified")
                         .HasColumnType("bit");
 
-                    b.Property<decimal>("amount")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<DateTimeOffset?>("LastUpdated")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<decimal>("balance")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("currency")
+                    b.Property<string>("Narration")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("date")
+                    b.Property<string>("Type")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("narration")
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("_Id")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("type")
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("Id");
 
-                    b.HasKey("id");
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("Prudent.BankTransactions", (string)null);
                 });
@@ -191,9 +217,6 @@ namespace PrudentWomen.Migrations
 
                     b.Property<decimal>("AmountRequested")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("Approved")
-                        .HasColumnType("bit");
 
                     b.Property<string>("ApproverId")
                         .HasColumnType("nvarchar(450)");
@@ -214,13 +237,13 @@ namespace PrudentWomen.Migrations
                     b.Property<DateTimeOffset>("DateApplied")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset>("DateApproved")
+                    b.Property<DateTimeOffset?>("DateApproved")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset>("DateCreated")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset>("DateDisbursed")
+                    b.Property<DateTimeOffset?>("DateDisbursed")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("DisbursementAccount")
@@ -234,6 +257,9 @@ namespace PrudentWomen.Migrations
 
                     b.Property<bool>("Repaid")
                         .HasColumnType("bit");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<int>("Tenure")
                         .HasColumnType("int");
@@ -298,6 +324,54 @@ namespace PrudentWomen.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("Mono.Roles", (string)null);
+                });
+
+            modelBuilder.Entity("Monochrome.Module.Core.Models.SyncLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("EndDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("LastUpdated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NumberOfRecords")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("StartDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("Prudent.SyncLogs", (string)null);
                 });
 
             modelBuilder.Entity("Monochrome.Module.Core.Models.User", b =>
@@ -590,6 +664,21 @@ namespace PrudentWomen.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("Monochrome.Module.Core.Models.BankTransaction", b =>
+                {
+                    b.HasOne("Monochrome.Module.Core.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("Monochrome.Module.Core.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("Monochrome.Module.Core.Models.Loan", b =>
                 {
                     b.HasOne("Monochrome.Module.Core.Models.User", "Approver")
@@ -620,6 +709,21 @@ namespace PrudentWomen.Migrations
                 });
 
             modelBuilder.Entity("Monochrome.Module.Core.Models.Role", b =>
+                {
+                    b.HasOne("Monochrome.Module.Core.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("Monochrome.Module.Core.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("Monochrome.Module.Core.Models.SyncLog", b =>
                 {
                     b.HasOne("Monochrome.Module.Core.Models.User", "CreatedBy")
                         .WithMany()

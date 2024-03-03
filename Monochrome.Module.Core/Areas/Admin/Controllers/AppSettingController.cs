@@ -5,6 +5,7 @@ using Monochrome.Module.Core.DataAccess;
 using Microsoft.AspNetCore.Authorization;
 using Monochrome.Module.Core.Services;
 using Monochrome.Module.Core.Areas.Admin.ViewModels;
+using Hangfire;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
@@ -33,7 +34,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.AccountId).Value = model.AccountId;
             _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.SecretKey).Value = model.SecretKey;
             _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.PublicKey).Value = model.PublicKey;
-            _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.TaxPercent).Value = model.TaxPercentage;
+            _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.PercentInterest).Value = model.PercentInterest;
 
             _appSettingRepo.SaveChanges();
 
@@ -56,11 +57,11 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> SynchronizeTransactions()
+        public async Task<IActionResult> SynchronizeTransactions(DateTime start, DateTime end, bool fromPrev = true)
         {
-            //await _bankManager.SynchronizeWithMono();
+            BackgroundJob.Enqueue<IBankManager>(p => p.SynchronizeWithMono(start, end, fromPrev));
+           
             return RedirectToAction(nameof(Index));
         }
-        
     }
 }

@@ -15,13 +15,15 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         private readonly IRepository<Loan> _loanRepo;
         private readonly IRepository<UserAccount> _userAccount;
         private readonly IRepository<string, User> _userRepo;
+        private readonly ILoanManager _loanManager;
 
         public UserLoansController(IRepository<Loan> loanRepo, IRepository<UserAccount> userAccount,
-            IRepository<string, User> userRepo)
+            IRepository<string, User> userRepo, ILoanManager loanManager)
         {
             _loanRepo = loanRepo;
             _userAccount = userAccount;
             _userRepo = userRepo;
+            _loanManager = loanManager;
         }
 
         public IActionResult Index(int page = 1, int size = 50)
@@ -30,7 +32,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
             var loans = _loanRepo.AsQueryable()
                 .Where(n => n.UserAccountId == account.Id)
-                .OrderByDescending(k => k.DateApproved);
+                .OrderByDescending(k => k.DateApplied);
 
             var model = new PaginatedTable<Loan>()
             {
@@ -128,7 +130,24 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         [HttpPost]
         public IActionResult Apply(LoanApplyForm model)
         {
-            return View();
+            if (ModelState.IsValid)
+            {
+                var result = _loanManager.Apply(model, User.Identity.Name);
+                if (result.Succeeded)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                ModelState.AddModelError("Errors", result.Error);
+                return View(model);
+            }
+
+            return View(model);
+        }
+
+        public IActionResult NameInquiry(string DisbursementAccount, string BankCode)
+        {
+            return Ok(true);
         }
     }
 }

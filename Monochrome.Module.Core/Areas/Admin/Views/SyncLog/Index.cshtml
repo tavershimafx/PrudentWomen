@@ -1,0 +1,64 @@
+﻿@using Monochrome.Module.Core.Models
+@model IEnumerable<SyncLog>
+@{
+    ViewData["Title"] = "Syncrhonization Logs |";
+}
+
+<!-- Start app main Content -->
+<div class="main-content">
+    <div class="row row-deck">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Syncrhonization Logs</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive table-invoice">
+                        <table class="table table-striped">
+                            <tr>
+                                <th>S/N</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Number of Records</th>
+                                <th>Message</th>
+                                <th>Status</th>
+                            </tr>
+                            @{
+                                int a = 0;
+                                foreach (var item in Model)
+                                {
+                                    a++;
+                                    <tr>
+                                        <td>@a</td>
+                                        <td>@item.StartDate.ToString("dd MMM yyy")</td>
+                                        <td>@item.EndDate.ToString("dd MMM yyy")</td>
+                                        <td>@item.NumberOfRecords</td>
+                                        <td>@item.Message</td>
+                                        <td>
+                                        @switch(item.Status)
+                                            {
+                                                case SynchronizationStatus.Completed:
+                                                    <div class="badge badge-success">@item.Status</div>
+                                                    break;
+                                                case SynchronizationStatus.Pending:
+                                                    <div class="badge badge-warning">@item.Status</div>
+                                                    break;
+                                                case SynchronizationStatus.Failed:
+                                                    <div class="badge badge-danger">@item.Status</div>
+                                                    break;
+                                                case SynchronizationStatus.Running:
+                                                    <div class="badge badge-warning">@item.Status</div>
+                                                    break;
+                                            }
+                                            
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

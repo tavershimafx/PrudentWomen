@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Monochrome.Module.Core.DataAccess;
 using Microsoft.AspNetCore.Authorization;
 using Monochrome.Module.Core.Services;
-using Monochrome.Module.Core.Areas.Admin.ViewModels;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
@@ -12,19 +11,143 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
     [Authorize(Roles = "Admin,SuperAdmin")]
     public class BankTransactionController : MvcBaseController
     {
-        private readonly IRepository<string, BankTransaction> _transactionRepo;
+        private readonly IRepository<BankTransaction> _transactionRepo;
         private readonly IBankManager _bankManager;
+        private int _pageSize = 50;
 
-        public BankTransactionController(IRepository<string, BankTransaction> transactionRepo, IBankManager bankManager)
+        public BankTransactionController(IRepository<BankTransaction> transactionRepo, IBankManager bankManager)
         {
             _transactionRepo = transactionRepo;
             _bankManager = bankManager;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string search, DateTime? from, DateTime? to, int page = 1)
         {
-            var settings = _transactionRepo.AsQueryable();
-            return View(settings);
+            var transactions = _transactionRepo.AsQueryable();
+            if(!string.IsNullOrEmpty(search))
+            {
+                ViewData["Search"] = search;
+                if (search.Equals("debit", StringComparison.InvariantCultureIgnoreCase) ||
+                    search.Equals("credit", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    transactions = transactions.Where(c => c.Type.Contains(search));
+                }
+                else
+                {
+                    transactions = transactions.Where(c => c.Narration.Contains(search));
+                }
+            }
+
+            if (from.HasValue)
+            {
+                ViewData["From"] = from;
+                transactions = transactions.Where(n => n.Date >= from);
+            }
+
+            if (to.HasValue)
+            {
+                ViewData["To"] = to;
+                transactions = transactions.Where(n => n.Date <= to);
+            }
+
+            var model = new PaginatedTable<BankTransaction>()
+            {
+                TotalItems = transactions.Count()
+            };
+
+            model.Data = transactions.Skip((_pageSize * page) - _pageSize).Take(_pageSize);
+
+            model.PageSize = _pageSize;
+            model.TotalPages = (int)Math.Ceiling((double)model.TotalItems / _pageSize);
+            model.Page = page;
+            if (model.TotalPages > 1)
+            {
+                var currentPage = page;
+                var totalPages = model.TotalPages;
+                List<int> pages = new List<int>();
+                if (page == 1)
+                {
+                    // we have to paginate forward
+                    var i = currentPage;
+                    while (i < totalPages)
+                    {
+                        // we want to show maximum of 5 pagination buttons
+                        if (pages.Count >= 5)
+                        {
+                            break;
+                        }
+
+                        pages.Add(i + 1);
+                        i++;
+                    }
+                }
+                else if (currentPage == totalPages)
+                {
+                    // we have to paginate backward
+                    var i = currentPage;
+                    while (i > 1)
+                    {
+                        // we want to show maximum of 5 pagination buttons
+                        if (pages.Count >= 5)
+                        {
+                            break;
+                        }
+
+                        pages.Add(i - 1);
+                        i--;
+                    }
+                }
+                else
+                {
+                    // paginate max two forward and max two backward
+
+                    // start with backward
+                    var i = currentPage;
+                    while (i < (currentPage - 3) && i > 1)
+                    {
+                        if ((currentPage - 3) == 1)
+                        {
+                            break;
+                        }
+
+                        pages.Add(i - 1);
+                        i--;
+                    }
+
+                    //add current page
+                    pages.Add(currentPage);
+
+                    //paginate max two forward
+                    var x = currentPage;
+                    while (x < totalPages)
+                    {
+                        // at this point, we assume there are less than five items to paginate
+                        if (pages.Count >= 5)
+                        {
+                            break;
+                        }
+
+                        pages.Add(x + 1);
+                        x++;
+                    }
+                }
+
+                model.Pages = pages.ToArray();
+            }
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> ManualMap(string transactionId, string userName)
+        {
+            var result = await _bankManager.ManualIdentify(transactionId, userName);
+            if (result.Succeeded)
+            {
+                return Ok();
+            }
+
+            ModelState.AddModelError("Errors", result.Error);
+            return BadRequest(ModelState);
         }
     }
 }

@@ -5,6 +5,6 @@
         public string AccountId { get; set; }
         public string PublicKey { get; set; }
         public string SecretKey { get; set; }
-        public string TaxPercentage { get; set; }
+        public string PercentInterest { get; set; }
     }
 }

@@ -31,7 +31,7 @@
                                 <h4>Current Balance</h4>
                             </div>
                             <div class="card-body">
-                                N @ViewData["Balance"]
+                                ₦@ViewData["Balance"]
                             </div>
                         </div>
                     </div>
@@ -46,7 +46,7 @@
                                 <h4>Loan</h4>
                             </div>
                             <div class="card-body">
-                                N @ViewData["Loan"]
+                                ₦@ViewData["Loan"]
                             </div>
                         </div>
                     </div>
@@ -67,7 +67,6 @@
                                         <th>Amount</th>
                                         <th>Date</th>
                                         <th>Type</th>
-                                        <th>Balance</th>
                                     </tr>
                                 @{
                                     if (!Model.Data.Any())
@@ -84,10 +83,9 @@
                                             x++;
                                             <tr>
                                                 <td>@x</td>
-                                                <td>N @transaction.Amount</td>
+                                                <td>₦@((transaction.Amount/100).ToString("N2"))</td>
                                                 <td>@transaction.Date.ToString("dd MMM yyyy")</td>
                                                 <td><div class="badge badge-@(transaction.Type == "credit"? "success" : "danger")">@transaction.Type</div></td>
-                                                <td>@transaction.Balance</td>
                                             </tr>
                                         }
                                     }

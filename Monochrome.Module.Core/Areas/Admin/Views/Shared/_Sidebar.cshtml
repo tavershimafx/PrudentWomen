@@ -8,19 +8,26 @@
     {
         <ul class="sidebar-menu">
             <li class="menu-header">Dashboard</li>
-            <li><a class="nav-link" href="/admin/dashboard/index"><i class="fas fa-pencil-ruler"></i> <span>Home</span></a></li>
-            <li class="menu-header">Starter</li>
-            <li><a class="nav-link" href="/admin/regcode/index"><i class="far fa-square"></i> <span>Registration Codes</span></a></li>
-            <li><a class="nav-link" href="/admin/users/list"><i class="fas fa-th-large"></i> <span>Users</span></a></li>
-            <li><a class="nav-link" href="/admin/appsetting/index"><i class="fas fa-th-large"></i> <span>Settings</span></a></li>
+            <li><a class="nav-link" href="/admin/dashboard/index"><i class="fas fa-fire"></i> <span>Home</span></a></li>
+            <li class="menu-header">Transactions</li>
+            <li><a class="nav-link" href="/admin/BankTransaction/index"><i class="far fa-file-alt"></i> <span>Bank Transactions</span></a></li>
+            <li><a class="nav-link" href="/admin/UserAccount/index"><i class="fas fa-th-large"></i> <span>User Accounts</span></a></li>
+            <li><a class="nav-link" href="/admin/loans/index"><i class="fas fa-th"></i> <span>Loans</span></a></li>
+            <li><a class="nav-link" href="/admin/loandisbursement/index"><i class="fas fa-th"></i> <span>Loan Disbursements</span></a></li>
+            <li class="menu-header">Logs</li>
+            <li><a class="nav-link" href="/admin/SyncLog/index"><i class="fas fa-pencil-ruler"></i> <span>Sync Logs</span></a></li>
+            <li class="menu-header">Administration</li>
+            <li><a class="nav-link" href="/admin/regcode/index"><i class="fas fa-columns"></i> <span>Registration Codes</span></a></li>
+            <li><a class="nav-link" href="/admin/users/list"><i class="far fa-user"></i> <span>Users</span></a></li>
+            <li><a class="nav-link" href="/admin/appsetting/index"><i class="fas fa-plug"></i> <span>Settings</span></a></li>
         </ul>
     }
     else
     {
         <ul class="sidebar-menu">
             <li class="menu-header">Dashboard</li>
-            <li><a class="nav-link" href="/admin/userdashboard/index"><i class="fas fa-pencil-ruler"></i> <span>Home</span></a></li>
-            @*<li><a class="nav-link" href="/admin/userdashboard/index"><i class="fas fa-pencil-ruler"></i> <span>Loans</span></a></li>*@
+            <li><a class="nav-link" href="/admin/userdashboard/index"><i class="fas fa-fire"></i> <span>Home</span></a></li>
+            <li><a class="nav-link" href="/admin/userloans/index"><i class="fas fa-th"></i> <span>Loans</span></a></li>
         </ul>
     }
 }

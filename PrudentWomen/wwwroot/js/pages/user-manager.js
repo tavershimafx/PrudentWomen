@@ -66,6 +66,32 @@ $('[data-user]').click(function (e) {
     })
 });
 
+$("[data-status]").click(function (e) {
+    var me = $(this)
+    var id = me.data("id")
+    var status = me.data("status")
+
+    $(".page-loader-wrapper").show()
+    $.ajax({
+        method: "GET",
+        url: `/admin/users/change-status/?userId=${id}&status=${status}`,
+        processData: false,
+        async: false,
+        success: function (xhr) {
+            window.location = window.location;
+        },
+        error: function (xhr) {
+            $(".page-loader-wrapper").hide()
+            var errors = getErrors(xhr.responseJSON)
+            let errList = ''
+            for (var i = 0; i < errors.length; i++) {
+                errList += errors[i] + '\n'
+            }
+            alert(errList)
+        }
+    })
+})
+
 $('#new_user').click(function (e) {
     e.preventDefault()
     $("#create_errors").empty()

@@ -13,6 +13,7 @@ using System.Text.Encodings.Web;
 using System.Text;
 using Monochrome.Module.Core.Services.Email;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Monochrome.Module.Core.Services;
 
 namespace Monochrome.Module.Core.Areas.Admin.Controllers
 {
@@ -28,6 +29,7 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
         private readonly IEmailSender _emailSender;
         private readonly IUserStore<User> _userStore;
         private readonly IUserEmailStore<User> _emailStore;
+        private int _pageSize = 50;
 
         public UsersController(ILogger<UsersController> logger, IRepository<string, User> userRepository,
             IRepository<string, Role> roleRepository, UserManager<User> userManager,
@@ -180,26 +182,121 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
         }
 
         [HttpGet("list")]
-        public IActionResult Index()
+        public IActionResult Index(string search, int page = 1)
         {
             var users = _userRepository.AsQueryable()
-                .Include(k => k.UserRoles).ThenInclude(x => x.Role)
-                .OrderByDescending(k => k.DateCreated)
-                .Select(x => new UserListItemVm
-                {
-                    Id = x.Id,
-                    Email = x.Email,
-                    FullName = $"{x.FirstName} {x.LastName}",
-                    EmailConfirmed = x.EmailConfirmed,
-                    Username = x.UserName,
-                    DateCreated = x.DateCreated,
-                    Roles = x.UserRoles.Select(n => n.Role.Name).ToArray()
-                });
+                .Include(k => k.UserRoles).ThenInclude(x => x.Role).AsQueryable();
+                
+            if (!string.IsNullOrEmpty(search))
+            {
+                ViewData["Search"] = search;
+                users = users.Where(n => n.Email.Contains(search) || n.UserName.Contains(search) ||
+                n.FirstName.Contains(search) || n.LastName.Contains(search));
+            }
+
+            var searched = users.Select(x => new UserListItemVm
+            {
+                Id = x.Id,
+                Email = x.Email,
+                FullName = $"{x.FirstName} {x.LastName}",
+                EmailConfirmed = x.EmailConfirmed,
+                Username = x.UserName,
+                DateCreated = x.DateCreated,
+                Roles = x.UserRoles.Select(n => n.Role.Name).ToArray(),
+                Status = x.Status
+            }).OrderByDescending(k => k.DateCreated);
 
             ViewBag.Roles = _roleRepository.AsQueryable()
                 .Where(x => x.NormalizedName != "SuperAdmin".Normalize().ToUpperInvariant())
                 .Select(x => new SelectListItem { Text = x.Name, Value = x.Id });
-            return View(users);
+
+            ViewBag.Status = EnumHelper.ToDictionary(typeof(UserStatus)).Select(x => x.Value);
+            var model = new PaginatedTable<UserListItemVm>()
+            {
+                TotalItems = searched.Count()
+            };
+
+            model.Data = searched.Skip((_pageSize * page) - _pageSize).Take(_pageSize);
+
+            model.PageSize = _pageSize;
+            model.TotalPages = (int)Math.Ceiling((double)model.TotalItems / _pageSize);
+            model.Page = page;
+            if (model.TotalPages > 1)
+            {
+                var currentPage = page;
+                var totalPages = model.TotalPages;
+                List<int> pages = new List<int>();
+                if (page == 1)
+                {
+                    // we have to paginate forward
+                    var i = currentPage;
+                    while (i < totalPages)
+                    {
+                        // we want to show maximum of 5 pagination buttons
+                        if (pages.Count >= 5)
+                        {
+                            break;
+                        }
+
+                        pages.Add(i + 1);
+                        i++;
+                    }
+                }
+                else if (currentPage == totalPages)
+                {
+                    // we have to paginate backward
+                    var i = currentPage;
+                    while (i > 1)
+                    {
+                        // we want to show maximum of 5 pagination buttons
+                        if (pages.Count >= 5)
+                        {
+                            break;
+                        }
+
+                        pages.Add(i - 1);
+                        i--;
+                    }
+                }
+                else
+                {
+                    // paginate max two forward and max two backward
+
+                    // start with backward
+                    var i = currentPage;
+                    while (i < (currentPage - 3) && i > 1)
+                    {
+                        if ((currentPage - 3) == 1)
+                        {
+                            break;
+                        }
+
+                        pages.Add(i - 1);
+                        i--;
+                    }
+
+                    //add current page
+                    pages.Add(currentPage);
+
+                    //paginate max two forward
+                    var x = currentPage;
+                    while (x < totalPages)
+                    {
+                        // at this point, we assume there are less than five items to paginate
+                        if (pages.Count >= 5)
+                        {
+                            break;
+                        }
+
+                        pages.Add(x + 1);
+                        x++;
+                    }
+                }
+
+                model.Pages = pages.ToArray();
+            }
+
+            return View(model);
         }
 
         [HttpGet("change-status")]
@@ -256,14 +353,6 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
             
             ModelState.AddModelError("Errors", "User not found.");
             return BadRequest(ModelState);
-        }
-
-        [HttpGet("user-status")]
-        [ProducesResponseType(typeof(object), 200)]
-        public IActionResult UserStatusEnums()
-        {
-            var model = EnumHelper.ToDictionary(typeof(UserStatus)).Select(x => new { Id = x.Key.ToString(), Name = x.Value });
-            return Ok(model);
         }
 
         private IUserEmailStore<User> GetEmailStore()

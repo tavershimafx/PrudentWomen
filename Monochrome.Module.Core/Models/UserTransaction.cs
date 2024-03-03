@@ -1,4 +1,6 @@
-﻿namespace Monochrome.Module.Core.Models
+﻿using Newtonsoft.Json;
+
+namespace Monochrome.Module.Core.Models
 {
     public class UserTransaction: BaseModel
     {
@@ -6,7 +8,10 @@
         public decimal Amount { get; set; }
         public DateTimeOffset Date { get; set; }
         public decimal Balance { get; set; }
-        public long AccountId { get; set; }
+
+        public long UserAccountId { get; set; }
+
+        [JsonIgnore]
         public UserAccount UserAccount { get; set; }
     }
 }

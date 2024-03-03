@@ -4,7 +4,7 @@
     {
         public static string AccountId => "AccountId";
 
-        public static string TaxPercent => "TaxPercentage";
+        public static string PercentInterest => "PercentInterest";
 
         public static string SecretKey => "SecretKey";
 

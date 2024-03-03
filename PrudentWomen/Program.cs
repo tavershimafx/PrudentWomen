@@ -8,6 +8,7 @@ using Monochrome.Module.Core.Services.Email;
 using Monochrome.Module.Core.Services;
 using Serilog;
 using System.Reflection;
+using Hangfire;
 
 namespace PrudentWomen
 {
@@ -44,6 +45,16 @@ namespace PrudentWomen
                 .AddMvc(options => options.EnableEndpointRouting = false)
                 .AddRazorRuntimeCompilation();
 
+            #region HangFire services
+
+            builder.Services.AddHangfire(config =>
+            {
+                config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"));
+            });
+            builder.Services.AddHangfireServer();
+
+            #endregion
+
             #region Services
 
             builder.Services.AddHttpClient();
@@ -57,6 +68,7 @@ namespace PrudentWomen
             builder.Services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
             builder.Services.AddScoped<IEmailSender, EmailSender>();
             builder.Services.AddScoped<IBankManager, BankManager>();
+            builder.Services.AddScoped<ILoanManager, LoanManager>();
             builder.Services.AddScoped<INotificationHandler<UserCreated>, UserCreatedHandler>();
 
             #endregion
@@ -95,6 +107,7 @@ namespace PrudentWomen
             #endregion
 
             CreateAdminAndRoles(builder.Services).Wait();
+            //RegisterHangFireJobs();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -116,6 +129,9 @@ namespace PrudentWomen
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            //app.UseHangfireServer();
+            app.UseHangfireDashboard("/hangfire");
 
             app.UseEndpoints(endpoint =>
             {
@@ -184,9 +200,9 @@ namespace PrudentWomen
             }
             
             // tax percent
-            if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.TaxPercent) == null)
+            if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.PercentInterest) == null)
             {
-                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.TaxPercent, Value = "30" });
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.PercentInterest, Value = "30" });
             }
 
             // secret key
@@ -203,6 +219,11 @@ namespace PrudentWomen
             appSetting.SaveChanges();
             
             return true;
+        }
+
+        private static void RegisterHangFireJobs()
+        {
+            RecurringJob.AddOrUpdate<IBankManager>("Transaction Sync", p => p.SynchronizeWithMono(default, default, true), Cron.Hourly());
         }
     }
 }

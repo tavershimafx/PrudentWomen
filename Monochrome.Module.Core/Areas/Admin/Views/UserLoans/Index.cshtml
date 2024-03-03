@@ -32,8 +32,8 @@
                                     <th>Approved</th>
                                     <th>Amount Granted</th>
                                     <th>Date Approved</th>
-                                    <th>Repaid</th>
                                     <th>Date Disbursed</th>
+                                    <th>Repaid</th>
                                 </tr>
                                 @{
                                     if (!Model.Data.Any())
@@ -50,13 +50,28 @@
                                             x++;
                                             <tr>
                                                 <td>@x</td>
-                                                <td>N @loan.AmountRequested</td>
+                                                <td>₦@loan.AmountRequested.ToString("N2")</td>
                                                 <td>@loan.DateApplied.ToString("dd MMM yyyy")</td>
-                                                <td><div class="badge badge-@(loan.Approved? "info" : "danger")"><i class="fa fa-@(loan.Approved ? "check" : "times")"></i></div></td>
-                                                <td>N @loan.AmountGranted.ToString("N2")</td>
-                                                <td>@loan.DateApproved.ToString("dd MMM yyyy")</td>
-                                                <td><div class="badge badge-@(loan.Repaid? "info" : "warning")"><i class="fa fa-@(loan.Repaid ? "check" : "times")"></i></div></td>
-                                                <td>@loan.DateDisbursed.ToString("dd MMM yyyy")</td>
+                                                <td>
+                                                    @switch (loan.Status)
+                                                    {
+                                                        case LoanApplyStatus.Approved:
+                                                            <div class="badge badge-success">Approved</div>
+                                                            break;
+                                                        case LoanApplyStatus.Pending:
+                                                            <div class="badge badge-warning">Pending</div>
+                                                            break;
+                                                        case LoanApplyStatus.Rejected:
+                                                            <div class="badge badge-danger">Rejected</div>
+                                                            break;
+                                                        default:
+                                                            break;
+                                                    }
+                                                </td>
+                                                <td>₦@loan.AmountGranted.ToString("N2")</td>
+                                                <td>@($"{loan.DateApproved:dd MMM yyyy}")</td>
+                                                <td>@($"{loan.DateDisbursed:dd MMM yyyy}")</td>
+                                                <td><div class="badge badge-@(loan.Repaid? "success" : "danger")"><i class="fa fa-@(loan.Repaid ? "check" : "times")"></i></div></td>
                                             </tr>
                                         }
                                     }
@@ -114,6 +129,5 @@
                 </div>
             </div>
         </div>
-
     </section>
 </div>

@@ -1,0 +1,105 @@
+﻿@using Monochrome.Module.Core.Models
+@using Monochrome.Module.Core.DataAccess
+@model Monochrome.Module.Core.Services.PaginatedTable<UserAccountList>
+@{
+    ViewData["Title"] = "User Accounts |";
+    var search = ViewData["Search"];
+}
+
+<!-- Start app main Content -->
+<div class="main-content">
+    <div class="row row-deck">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>User Accounts</h4>
+                    <div class="card-header-form">
+                        <form method="get" action="/admin/useraccount/index">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control" placeholder="Search an account">
+                                <div class="input-group-btn">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive table-invoice">
+                        <table class="table table-striped">
+                            <tr>
+                                <th>S/N</th>
+                                <th>UserName</th>
+                                <th>Fullname</th>
+                                <th>Balance</th>
+                            </tr>
+                            @{
+                                int z = 0;
+                                foreach (var item in Model.Data)
+                                {
+                                    z++;
+                                    <tr>
+                                        <a href="/admin/usertransactions/index/?accountId=@item.Id">
+                                            <td>@z</td>
+                                            <td>@item.UserName</td>
+                                            <td>@item.FullName</td>
+                                            <td>₦@((item.Balance / 100).ToString("N2"))</td>
+                                        </a>
+                                    </tr>
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card-footer text-right">
+                    @{
+                        var totalPages = Model.TotalPages;
+                        var currentPage = Model.Page;
+                    }
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            <li class="page-item @(Model.Page <= 1? "disabled" : "")">
+                                <a class="page-link" href="/admin/useraccount/index?page=1&search=@search" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                    <span class="sr-only">First</span>
+                                </a>
+                            </li>
+                            <li class="page-item @(Model.Page <= 1? "disabled" : "")">
+                                <a class="page-link" href="/admin/useraccount/index?page=@(Model.Page - 1)&search=@search" aria-label="Previous">
+                                    <span aria-hidden="true">&lsaquo;</span>
+                                    <span class="sr-only">Previous</span>
+                                </a>
+                            </li>
+                            @{
+                                if (Model.Pages != null)
+                                {
+                                    for (int i = 0; i < Model.Pages.Length; i++)
+                                    {
+                                        <li class="page-item"><a class="page-link" href="/admin/useraccount/index?page=@Model.Pages[i]&search=@search">@Model.Pages[i]</a></li>
+                                    }
+                                }
+                                else
+                                {
+                                    <li class="page-item disabled"><a class="page-link" href="/admin/useraccount/index?page=1&search=@search">1</a></li>
+                                }
+                            }
+                            <li class="page-item  @(Model.Page *  Model.PageSize >= Model.TotalItems ? "disabled" : "")">
+                                <a class="page-link" href="/admin/useraccount/index?page=@(Model.Page + 1)&search=@search" aria-label="Next">
+                                    <span aria-hidden="true">&rsaquo;</span>
+                                    <span class="sr-only">Next</span>
+                                </a>
+                            </li>
+                            <li class="page-item  @(Model.Page *  Model.PageSize >= Model.TotalItems ? "disabled" : "")">
+                                <a class="page-link" href="/admin/useraccount/index?page=@Model.TotalPages&search=@search" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                    <span class="sr-only">Last</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

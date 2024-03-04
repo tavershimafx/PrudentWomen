@@ -29,7 +29,7 @@
         public string Comments { get; set; }
         public DateTimeOffset? DateDisbursed { get; set; }
         public string DisbursementAccount { get; set; }
-        public string BankCode { get; set; }
+        public string BankNIPCode { get; set; }
         public string Guarantors { get; set; }
         public string SupportingDocuments { get; set; }
     }

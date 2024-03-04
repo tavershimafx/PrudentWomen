@@ -36,7 +36,8 @@ namespace Monochrome.Module.Core.Services
                     UserAccountId = account.Id,
                     PecentInterest = ushort.Parse(interest.Value),
                     Status = LoanApplyStatus.Pending,
-                    DateApplied = DateTime.Now
+                    DateApplied = DateTime.Now,
+                    BankNIPCode = form.BankCode
                 };
 
                 _loanRepo.Insert(loan);

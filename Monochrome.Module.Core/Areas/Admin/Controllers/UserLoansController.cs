@@ -5,6 +5,7 @@ using Monochrome.Module.Core.DataAccess;
 using Microsoft.AspNetCore.Authorization;
 using Monochrome.Module.Core.Services;
 using Monochrome.Module.Core.Areas.Admin.ViewModels;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
@@ -16,14 +17,16 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         private readonly IRepository<UserAccount> _userAccount;
         private readonly IRepository<string, User> _userRepo;
         private readonly ILoanManager _loanManager;
+        private readonly IBankManager _bankManager;
 
         public UserLoansController(IRepository<Loan> loanRepo, IRepository<UserAccount> userAccount,
-            IRepository<string, User> userRepo, ILoanManager loanManager)
+            IRepository<string, User> userRepo, ILoanManager loanManager, IBankManager bankManager)
         {
             _loanRepo = loanRepo;
             _userAccount = userAccount;
             _userRepo = userRepo;
             _loanManager = loanManager;
+            _bankManager = bankManager;
         }
 
         public IActionResult Index(int page = 1, int size = 50)
@@ -122,8 +125,9 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             return View(model);
         }
 
-        public IActionResult Apply()
+        public async Task<IActionResult> Apply()
         {
+            ViewData["Banks"] = (await _bankManager.FetchBanks()).Data.Select(n => new SelectListItem() { Text = n.Name, Value = n.Nip_code});
             return View();
         }
 

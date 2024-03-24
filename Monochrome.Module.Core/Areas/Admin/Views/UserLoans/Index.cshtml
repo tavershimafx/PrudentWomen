@@ -50,7 +50,7 @@
                                             x++;
                                             <tr>
                                                 <td>@x</td>
-                                                <td>₦@loan.AmountRequested.ToString("N2")</td>
+                                                <td>₦@((loan.AmountRequested/100).ToString("N2"))</td>
                                                 <td>@loan.DateApplied.ToString("dd MMM yyyy")</td>
                                                 <td>
                                                     @switch (loan.Status)
@@ -68,7 +68,7 @@
                                                             break;
                                                     }
                                                 </td>
-                                                <td>₦@loan.AmountGranted.ToString("N2")</td>
+                                                <td>₦@((loan.AmountGranted/100).ToString("N2"))</td>
                                                 <td>@($"{loan.DateApproved:dd MMM yyyy}")</td>
                                                 <td>@($"{loan.DateDisbursed:dd MMM yyyy}")</td>
                                                 <td><div class="badge badge-@(loan.Repaid? "success" : "danger")"><i class="fa fa-@(loan.Repaid ? "check" : "times")"></i></div></td>

@@ -132,26 +132,40 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         }
 
         [HttpPost]
-        public IActionResult Apply(LoanApplyForm model)
+        public async Task<IActionResult> Apply(LoanApplyForm model)
         {
             if (ModelState.IsValid)
             {
-                var result = _loanManager.Apply(model, User.Identity.Name);
+                var result = await _loanManager.Apply(model, User.Identity.Name);
                 if (result.Succeeded)
                 {
                     return RedirectToAction(nameof(Index));
                 }
 
+                ViewData["Banks"] = (await _bankManager.FetchBanks()).Data.Select(n => new SelectListItem() { Text = n.Name, Value = n.Nip_code });
                 ModelState.AddModelError("Errors", result.Error);
                 return View(model);
             }
 
+            ViewData["Banks"] = (await _bankManager.FetchBanks()).Data.Select(n => new SelectListItem() { Text = n.Name, Value = n.Nip_code });
             return View(model);
         }
 
-        public IActionResult NameInquiry(string DisbursementAccount, string BankCode)
+        public async Task<IActionResult> NameInquiry(string account, string bankCode)
         {
-            return Ok(true);
+            AccountLookupObject lookup = new()
+            {
+                account_number = account,
+                nip_code = bankCode
+            };
+            var result = await _bankManager.AccountLookup(lookup);
+            if (result.Succeeded)
+            {
+                return Ok(result.Data);
+            }
+
+            ModelState.AddModelError("Errors", result.Error);
+            return BadRequest(ModelState);
         }
     }
 }

@@ -16,10 +16,10 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
     [Authorize(Roles = "Admin,SuperAdmin")]
     public class LoanDisbursementController : MvcBaseController
     {
-        private readonly IRepository<LoanDisbursement> _disbursementRepo;
+        private readonly IRepository<string, LoanDisbursement> _disbursementRepo;
         private readonly IBankManager _bankManager;
 
-        public LoanDisbursementController(IRepository<LoanDisbursement> disbursementRepo)
+        public LoanDisbursementController(IRepository<string, LoanDisbursement> disbursementRepo)
         {
             _disbursementRepo = disbursementRepo;
         }

@@ -42,6 +42,64 @@ $('[data-identify]').click(function (e) {
 
 });
 
+$("#disburse_btn").click(function (e) {
+    e.preventDefault()
+    var me = $(this)
+    let id = me.data("id")
+
+    $(".page-loader-wrapper").toggle()
+    $.ajax({
+        method: "POST",
+        url: `/admin/Loans/disburse/?id=${id}`,
+        processData: false,
+        async: false,
+        success: function (xhr) {
+            console.log(xhr)
+            window.open(xhr);
+        },
+        error: function (xhr) {
+            $(".page-loader-wrapper").hide()
+            var errors = getErrors(xhr.responseJSON)
+            $("#iden_errors").empty()
+            for (var i = 0; i < errors.length; i++) {
+                $("#iden_errors").append(`<span>${errors[i]}</span><br />`)
+            }
+        }
+    })
+})
+
+$("#DisbursementAccount").change(function (e) {
+    e.preventDefault()
+    var me = $(this)
+    let account = me.val()
+    let code = $("#BankCode").val()
+
+    if (account.length == 10) {
+        $(".page-loader-wrapper").toggle()
+        $("#name_inquiry").empty()
+        $.ajax({
+            method: "POST",
+            url: `/admin/userLoans/NameInquiry/?account=${account}&bankCode=${code}`,
+            processData: false,
+            async: false,
+            success: function (xhr) {
+                $(".page-loader-wrapper").hide()
+                $("#name_inquiry").append(`<span class='text-success'>${xhr.name}</span><br />`)
+                console.log("found account", xhr)
+                
+            },
+            error: function (xhr) {
+
+                $(".page-loader-wrapper").hide()
+                var errors = getErrors(xhr.responseJSON)
+                for (var i = 0; i < errors.length; i++) {
+                    $("#name_inquiry").append(`<span class='text-danger'>${errors[i]}</span><br />`)
+                }
+                console.log("errors", errors)
+            }
+        })
+    }    
+})
 
 function getErrors(response) {
     let errors = []

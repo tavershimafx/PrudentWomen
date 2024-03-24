@@ -1,4 +1,6 @@
-﻿namespace Monochrome.Module.Core.Models
+﻿using System.Security.Principal;
+
+namespace Monochrome.Module.Core.Models
 {
     public class AccountLookupObject
     {
@@ -62,5 +64,30 @@
         public decimal? Balance { get; set; }
         public string Currency { get; set; }
         public bool IsIdentified { get; set; }
+    }
+
+    public class InitiatePayment
+    {
+        public object Meta { get; set; }
+        public string Amount { get; set; }
+        public string Type { get; set; }
+        public string Description { get; set; }
+        public string Reference { get; set; }
+        public string Account { get; set; }
+        public string Redirect_url { get; set; }
+    }
+    public class InititatePaymentResponse
+    {
+        public string Id { get; set; }
+        public string type { get; set; }
+        public decimal Amount { get; set; }
+        public string Description { get; set; }
+        public string Reference { get; set; }
+        public object Meta { get; set; }
+        public object Customer { get; set; }
+        public string Payment_link { get; set; }
+        public string Redirect_url { get; set; }
+        public DateTimeOffset created_at { get; set; }
+        public DateTimeOffset updated_at { get; set; }
     }
 }

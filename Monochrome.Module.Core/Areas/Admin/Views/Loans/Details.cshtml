@@ -1,5 +1,5 @@
 ﻿@using Monochrome.Module.Core.Models
-@using Monochrome.Module.Core.Services
+@using Monochrome.Module.Core.DataAccess
 @model LoanApprovalDetails
 
 @{
@@ -60,7 +60,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Amount Requested</label>
-                                        <input type="text" value="@($"₦{Model.AmountRequested:N2}")" disabled class="form-control">
+                                        <input type="text" value="@($"₦{(Model.AmountRequested/100):N2}")" disabled class="form-control">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -111,28 +111,36 @@
                                     <div class="form-group">
                                         <label>Disbursement Account</label>
                                         <input asp-for="DisbursementAccount" disabled class="form-control">
+                                        <p class="text-success">@Model.DisbursementAccountName</p>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Balance At Approval</label>
-                                        <input type="text" value="@($"₦{Model.BalanceAtApproval:N2}")" disabled class="form-control">
+                                        <input type="text" value="@($"₦{(Model.BalanceAtApproval/100):N2}")" disabled class="form-control">
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Comments</label>
-                                        <textarea asp-for="Comments" class="form-control"></textarea>
+                                        <label>Guarators</label>
+                                        <input type="text" value="@Model.Guarantors" disabled class="form-control">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="Disburse">
-                                            <label class="form-check-label" for="defaultCheck3">Disburse?</label>
-                                        </div>
+                                        <label>Click to view supporting document</label>
+                                        @foreach (var item in Model.SupportingDocuments.Split(","))
+                                        {
+                                            <a target="_blank" href="@item">@System.IO.Path.GetFileName(item)</a>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Comments</label>
+                                        <textarea asp-for="Comments" class="form-control"></textarea>
                                     </div>
                                 </div>
                                 <div class="col-md-12">
@@ -151,19 +159,20 @@
                                         This user joined since @Model.UserAccount.DateCreated.ToString("dd MM yyy") (@(duration.TotalDays < 90 ? $"{Math.Floor(duration.TotalDays)} days" : $"{Math.Floor(duration.TotalDays / 30)} months"))
                                     </p>
                                     <p><div class="badge badge-primary"><i class="fa fa-exclamation-triangle"></i></div> <a class="" data-accountId="@Model.UserAccountId" href="javascript:void(0);">Click to view this user's saving history</a></p>
-                                    @if ((Model.BalanceAtApproval * (30/100)) > Model.AmountRequested)
+                                    @if ((Model.BalanceAtApproval * (30 / 100)) > Model.AmountRequested)
                                     {
-                                        <p><div class="badge badge-danger"><i class="fa fa-times"></i></div>This user does not have up to 30% of requested loan amount in his account. Current balance is ₦@Model.BalanceAtApproval.ToString("N2")</p>
+                                        <p><div class="badge badge-success"><i class="fa fa-check"></i></div>Amount requested is less than 30% of user's balance. Current balance is ₦@((Model.BalanceAtApproval/100).ToString("N2"))</p>
                                     }
                                     else
                                     {
-                                        <p><div class="badge badge-success"><i class="fa fa-check"></i></div>Amount requested is less than user's balance. Current balance is ₦@Model.BalanceAtApproval.ToString("N2")</p>
+                                        <p><div class="badge badge-danger"><i class="fa fa-times"></i></div>This user does not have up to 30% of requested loan amount in his account. Current balance is ₦@((Model.BalanceAtApproval / 100).ToString("N2"))</p>
                                     }
+                                   
                                     <p><div class="badge badge-warning"><i class="fa fa-exclamation-triangle"></i></div> View the documents provided above to verify guarantors for this loan</p>
                                     
                                     @if(Model.OutstandingLoans.Any())
                                     {
-                                        <p><div class="badge badge-danger"><i class="fa fa-times"></i></div>This user has an outstanding loan of ₦@Model.OutstandingLoans.Sum(k => k.AmountGranted).ToString("N2")</p>
+                                        <p><div class="badge badge-danger"><i class="fa fa-times"></i></div>This user has an outstanding loan of ₦@((Model.OutstandingLoans.Sum(k => k.AmountGranted) /100).ToString("N2"))</p>
                                     }
                                     else
                                     {
@@ -174,7 +183,8 @@
                             </div>
                         </div>
                         <div class="card-footer bg-whitesmoke text-md-right">
-                            <button class="btn btn-primary" type="submit">Approve</button>
+                            <button class="btn btn-primary" type="submit" disabled="@(Model.Status == LoanApplyStatus.Approved)">Approve</button>
+                            <button class="btn btn-primary" id="disburse_btn" data-id="@Model.Id" type="button" disabled="@(Model.Status != LoanApplyStatus.Approved)">Disburse</button>
                             <a class="btn btn-danger" href="/admin/loans/reject/?" id="reject_loan" data-id="@Model.Id">Reject</a>
                         </div>
                     </div>

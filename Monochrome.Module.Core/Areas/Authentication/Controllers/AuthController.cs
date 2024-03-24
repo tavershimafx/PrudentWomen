@@ -129,6 +129,7 @@ namespace Monochrome.Module.Core.Areas.Authentication.Controllers
                     var user = CreateUser();
                     user.FirstName = model.FirstName;
                     user.LastName = model.LastName;
+                    user.DOB = model.DOB;
 
                     while (_userRepository.AsQueryable().FirstOrDefault(k => k.UserName == user.PrudentNumber) != null)
                     {

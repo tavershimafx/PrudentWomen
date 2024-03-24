@@ -59,8 +59,13 @@
             </div>
             <div class="form-group">
                 <label asp-for="RegistrationCode"></label>
-                <input asp-for="RegistrationCode" class="form-control" autocomplete="on" aria-required="true" autofocus>
+                <input asp-for="RegistrationCode" class="form-control" autocomplete="on" aria-required="true">
                 <span class="invalid-feedback" asp-validation-for="RegistrationCode"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="DOB"></label>
+                <input type="date" asp-for="DOB" class="form-control"  aria-required="true">
+                <span class="invalid-feedback" asp-validation-for="DOB"></span>
             </div>
             <div class="row">
                 <div class="form-group col-12">

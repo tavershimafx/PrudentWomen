@@ -8,6 +8,7 @@ using Monochrome.Module.Core.Areas.Admin.ViewModels;
 using Monochrome.Module.Core.Helpers;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
@@ -18,13 +19,15 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         private readonly IRepository<Loan> _loanRepo;
         private readonly IRepository<UserAccount> _userAccount;
         private readonly ILoanManager _loanManager;
+        private readonly IBankManager _bankManager;
 
         public LoansController(IRepository<Loan> loanRepo, IRepository<UserAccount> userAccount,
-            ILoanManager loanManager)
+            ILoanManager loanManager, IBankManager bankManager)
         {
             _loanRepo = loanRepo;
             _userAccount = userAccount;
             _loanManager = loanManager;
+            _bankManager = bankManager;
         }
 
         public IActionResult Index(string search, DateTime? from, DateTime? to, int page = 1, int size = 50)
@@ -45,34 +48,41 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                     Tenure = n.Tenure
                 }).AsEnumerable();
 
-            if (search == "repaid")
+            if (!string.IsNullOrEmpty(search))
             {
-                loans = loans.Where(k => k.Repaid == true);
-            }
-            else if (search == "approved")
-            {
-                loans = loans.Where(k => k.Status == LoanApplyStatus.Approved);
-            }
-            else if (search == "rejected")
-            {
-                loans = loans.Where(k => k.Status == LoanApplyStatus.Rejected);
-            }
-            else if (search == "pending")
-            {
-                loans = loans.Where(k => k.Status == LoanApplyStatus.Pending);
-            }
-            else if (search == "overdue")
-            {
-                loans = loans.Where(k => DateTime.Now > k.DateApplied.AddDays(k.Tenure * 30));
-            }
+                ViewData["Search"] = search;
 
+                if (search == "repaid")
+                {
+                    loans = loans.Where(k => k.Repaid == true);
+                }
+                else if (search == "approved")
+                {
+                    loans = loans.Where(k => k.Status == LoanApplyStatus.Approved);
+                }
+                else if (search == "rejected")
+                {
+                    loans = loans.Where(k => k.Status == LoanApplyStatus.Rejected);
+                }
+                else if (search == "pending")
+                {
+                    loans = loans.Where(k => k.Status == LoanApplyStatus.Pending);
+                }
+                else if (search == "overdue")
+                {
+                    loans = loans.Where(k => DateTime.Now > k.DateApplied.AddDays(k.Tenure * 30));
+                }
+            }
+            
             if (from.HasValue)
             {
+                ViewData["From"] = from;
                 loans = loans.Where(n => n.DateApplied >= from);
             }
 
             if (to.HasValue)
             {
+                ViewData["To"] = to;
                 loans = loans.Where(n => n.DateApplied <= to);
             }
 
@@ -167,7 +177,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         }
 
         [HttpGet]
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
             var loan = _loanRepo.AsQueryable()
                 .Include(j => j.UserAccount.User)
@@ -178,7 +188,17 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                 loan.BalanceAtApproval = _userAccount.AsQueryable().FirstOrDefault(k => k.Id == loan.UserAccountId).Balance;
 
                 var details = LoanApprovalDetails.FromLoan(loan);
-                details.OutstandingLoans = _loanRepo.AsQueryable().Where(k => k.UserAccountId == loan.UserAccountId && k.Repaid == false);
+
+                AccountLookupObject lookup = new()
+                {
+                    account_number = loan.DisbursementAccount,
+                    nip_code = loan.BankNIPCode
+                };
+
+                var result = await _bankManager.AccountLookup(lookup);
+                details.DisbursementAccountName = result.Data.Name;
+
+                details.OutstandingLoans = _loanRepo.AsQueryable().Where(k => k.UserAccountId == loan.UserAccountId && k.Status == LoanApplyStatus.Approved && k.Repaid == false);
                 return View(details);
             }
 
@@ -196,6 +216,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                     var lns = _loanRepo.AsQueryable()
                              .Include(j => j.UserAccount.User)
                              .FirstOrDefault(k => k.Id == model.Id);
+
                     ModelState.AddModelError("Errors", "Amount to grant cannot be 0");
                     return View(lns);
                 }
@@ -224,8 +245,31 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             return Ok();
         }
 
-        public IActionResult Disburse(long id)
+        public async Task<IActionResult> Disburse(long id)
         {
+            var result = await _loanManager.DisburseLoan(id);
+            if (result.Succeeded)
+            {
+                return Ok(result.Data);
+            }
+
+            ModelState.AddModelError("Errors", result.Error);
+            return BadRequest(ModelState);
+        }
+
+        public IActionResult DisburseComplete(string paymentRef)
+        {
+            //var bankTransaction = new BankTransaction()
+            //{
+            //    Amount = 150000, // amount in kobo
+            //    IsIdentified = true,
+            //    Date = DateTime.Now,
+            //    Narration = "Debit from loan disbursement",
+            //    _Id = Guid.NewGuid().ToString("N"),
+            //    Type = "debit",
+            //};
+
+            //_bankTransactionRepo.Insert(bankTransaction);
             return Ok();
         }
     }

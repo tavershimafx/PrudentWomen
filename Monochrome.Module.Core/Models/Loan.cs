@@ -30,7 +30,15 @@
         public DateTimeOffset? DateDisbursed { get; set; }
         public string DisbursementAccount { get; set; }
         public string BankNIPCode { get; set; }
+
+        /// <summary>
+        /// Comma seperated list of usernames of guarantors
+        /// </summary>
         public string Guarantors { get; set; }
+
+        /// <summary>
+        /// comma seperated list of document urls
+        /// </summary>
         public string SupportingDocuments { get; set; }
     }
 }

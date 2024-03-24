@@ -16,7 +16,7 @@
         <div class="row">
             <div class="col-md-3"></div>
             <div class="col-md-6">
-                <form action="/admin/userLoans/apply" method="post">
+                <form action="/admin/userLoans/apply" method="post" enctype="multipart/form-data">
                     <div class="card" id="settings-card">
                         <div class="card-header">
                             <h4>Apply Loan</h4>
@@ -46,9 +46,29 @@
                                 </select>
                             </div>
                             <div class="form-group">
+                                <label>Select Disbursement Bank</label>
+                                <select asp-for="BankCode" class="form-control" asp-items="@ViewBag.Banks">
+                                </select>
+                                <span class="invalid-feedback" asp-validation-for="BankCode"></span>
+                            </div>
+                            <div class="form-group">
                                 <label>Disbursement Account</label>
                                 <input asp-for="DisbursementAccount" class="form-control">
+                                <span id="name_inquiry"></span>
                                 <span class="invalid-feedback" asp-validation-for="DisbursementAccount"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>Guarantors if any</label>
+                                <input asp-for="Guarantors" class="form-control">
+                                <span class="invalid-feedback" asp-validation-for="Guarantors"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>Documents if any</label>
+                                <input type="file" asp-for="Documents" class="form-control">
+                                <span class="invalid-feedback" asp-validation-for="Documents"></span>
+                            </div>
+                            <div class="form-group">
+                                <p>By submitting this form, you consent to a ₦1,500 application fee charged to your account.</p>
                             </div>
                         </div>
                         <div class="card-footer bg-whitesmoke text-md-right">
@@ -61,3 +81,6 @@
         </div>
     </section>
 </div>
+@section scripts{
+    <script asp-append-version="true" type="text/javascript" src="~/js/pages/transactions.js"></script>
+}

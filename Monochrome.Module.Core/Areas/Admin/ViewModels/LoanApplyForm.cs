@@ -11,7 +11,7 @@ namespace Monochrome.Module.Core.Areas.Admin.ViewModels
 
         [Required]
         [Display(Name = "Disbursement Account")]
-        [Remote(action: "NameInquiry", controller: "UserLoans", areaName: "Admin", AdditionalFields = nameof(BankCode))]
+        //[Remote(action: "NameInquiry", controller: "UserLoans", areaName: "Admin", AdditionalFields = nameof(BankCode))]
         [StringLength(maximumLength:10, MinimumLength = 10)]
         public string DisbursementAccount { get; set; }
 

@@ -38,14 +38,14 @@
                                 foreach (var item in Model.Data)
                                 {
                                     z++;
-                                    <tr>
-                                        <a href="/admin/usertransactions/index/?accountId=@item.Id">
-                                            <td>@z</td>
-                                            <td>@item.UserName</td>
-                                            <td>@item.FullName</td>
-                                            <td>₦@((item.Balance / 100).ToString("N2"))</td>
-                                        </a>
-                                    </tr>
+                                      
+                                      <tr>
+                                        <td>@z</td>
+                                        <td><a href="/admin/usertransaction/index/?accountId=@item.Id">@item.UserName</a></td>
+                                        <td>@item.FullName</td>
+                                        <td>₦@((item.Balance / 100).ToString("N2"))</td>
+                                    </tr> 
+                                    
                                 }
                             }
                         </table>

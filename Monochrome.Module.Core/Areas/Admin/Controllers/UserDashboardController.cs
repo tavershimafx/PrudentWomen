@@ -13,14 +13,16 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
     {
         private readonly IRepository<UserTransaction> _transactionRepo;
         private readonly IRepository<UserAccount> _userAccount;
+        private readonly IRepository<Loan> _loanRepo;
         private readonly IRepository<string, User> _userRepo;
 
         public UserDashboardController(IRepository<UserTransaction> transactionRepo, IRepository<UserAccount> userAccount,
-            IRepository<string, User> userRepo)
+            IRepository<string, User> userRepo, IRepository<Loan> loanRepo)
         {
             _transactionRepo = transactionRepo;
             _userAccount = userAccount;
             _userRepo = userRepo;
+            _loanRepo = loanRepo;
         }
 
         public IActionResult Index(int page = 1, int size = 50)
@@ -36,8 +38,11 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                 TotalItems = transactions.Count()
             };
 
-            ViewData["Balance"] = account.Balance.ToString("N2");
-            ViewData["Loan"] = account.Balance.ToString("N2");
+            ViewData["Balance"] = (account.Balance/100).ToString("N2");
+
+            var loans = _loanRepo.AsQueryable().Where(n => n.UserAccountId == account.Id && n.Status == LoanApplyStatus.Approved);
+            var total = loans.Sum(n => n.AmountGranted);
+            ViewData["Loan"] = (total/100).ToString("N2");
 
             model.Data = transactions.Skip((size * page) - size).Take(size);
 

@@ -28,6 +28,8 @@ namespace Monochrome.Module.Core.Models
 
         public string LastName { get; set; }
 
+        public DateTimeOffset DOB { get; set; }
+
         public string ProfilePicture { get; set; }
 
         [NotMapped]

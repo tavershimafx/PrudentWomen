@@ -28,13 +28,16 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
 
         public IActionResult Index()
         {
+            var allTransactions = _transactionRepo.AsQueryable();
+            var credit = allTransactions.Where(k => k.Type == "credit").Sum(n => n.Amount);
+            var debit = allTransactions.Where(k => k.Type == "debit").Sum(n => n.Amount);
 
             var loans = _loanRepo.AsQueryable().Where(k => k.Repaid == false);
             var model = new DashboardViewModel()
             {
                 LoanAmount = loans.Sum(k => k.AmountGranted),
                 TotalAdmins = 2,
-                Balance = _userAccount.AsQueryable().Sum(n => n.Balance),
+                Balance = credit - debit,
                 TotalLoans = loans.Count(),
             };
             model.Loans = loans.Where(n => n.Status == LoanApplyStatus.Pending).Select(n => new LoanList
@@ -51,21 +54,31 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
             }); ;
             model.TotalOverdue = model.LoanAmount;
 
-            var accounts = _userAccount.AsQueryable().AsNoTracking().OrderBy(n => n.Balance);
+            var accounts = _userAccount.AsQueryable()
+                .Include(k => k.User).AsNoTracking().OrderBy(n => n.Balance);
+
             model.HighestBalance = accounts.FirstOrDefault()?.Balance;
+            model.HighestBalanceUserName = accounts.FirstOrDefault()?.User.UserName;
             model.LowestBalance = accounts.LastOrDefault()?.Balance;
+            model.LowestBalanceUserName = accounts.LastOrDefault()?.User.UserName;
 
-            var time = DateTime.Now.Subtract(TimeSpan.FromDays(365));
-            var transactions = _transactionRepo.AsQueryable().Where(p => p.Date >= time) ;
+            var time = DateTime.Now.Subtract(TimeSpan.FromDays(400));
+            var analytics = allTransactions.Where(p => p.Date >= time)
+                .GroupBy(k => k.Date.Date)
+                .Select(n => new UserTransaction
+                {
+                    Amount = n.Sum(p => p.Amount),
+                    Date = n.First().Date
+                });
 
-            if (transactions.Any())
+            if (analytics.Any())
             {
-                transactions = transactions.OrderBy(n => n.Date);
-                model.FromOneYearDate = transactions.First().Date;
-                model.MaximumDate = transactions.Last().Date;
+                analytics = analytics.OrderBy(n => n.Date);
+                model.FromOneYearDate = analytics.First().Date;
+                model.MaximumDate = analytics.Last().Date;
             }
 
-            model.Data = transactions.Select(n => new decimal[] { n.Date.ToFileTime(), n.Amount });
+            model.Data = analytics.Select(n => new object[] { n.Date.ToUnixTimeMilliseconds(), n.Amount/100 });
             return View(model);
         }
 

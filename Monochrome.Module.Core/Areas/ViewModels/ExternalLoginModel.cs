@@ -63,6 +63,8 @@ namespace Monochrome.Module.Core.Areas.ViewModels
         [Required]
         public string RegistrationCode { get; set; }
 
+        public DateTimeOffset DOB { get; set; }
+
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]

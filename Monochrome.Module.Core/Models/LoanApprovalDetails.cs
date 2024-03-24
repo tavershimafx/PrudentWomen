@@ -2,6 +2,7 @@
 {
     public class LoanApprovalDetails: Loan
     {
+        public string DisbursementAccountName { get; set; }
         public static LoanApprovalDetails FromLoan(Loan loan)
         {
             return new LoanApprovalDetails()
@@ -29,7 +30,9 @@
                 Status = loan.Status,
                 Tenure = loan.Tenure,
                 UpdatedBy = loan.UpdatedBy,
-                UpdatedById = loan.UpdatedById
+                UpdatedById = loan.UpdatedById,
+                SupportingDocuments = loan.SupportingDocuments,
+                Guarantors = loan.Guarantors
             };
         }
         public IEnumerable<Loan> OutstandingLoans { get; set; }

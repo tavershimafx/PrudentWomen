@@ -3,6 +3,7 @@
 @model Monochrome.Module.Core.Areas.Admin.ViewModels.DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard |";
+    var totalDays = Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays;
 }
 
 @section styles{
@@ -43,7 +44,7 @@
                             <h4>Balance</h4>
                         </div>
                         <div class="card-body">
-                            ₦@Model.Balance.ToString("N2")
+                            ₦@((Model.Balance/100).ToString("N2"))
                         </div>
                     </div>
                 </div>
@@ -58,7 +59,7 @@
                             <h4>Loan Amount</h4>
                         </div>
                         <div class="card-body">
-                            ₦@Model.LoanAmount.ToString("N2")
+                            ₦@((Model.LoanAmount/100).ToString("N2"))
                         </div>
                     </div>
                 </div>
@@ -85,9 +86,18 @@
                     <div class="card-header">
                         <h4>Transactions</h4>
                         <div class="card-header-action">
-                            <button class="btn btn-sm btn-outline-secondary mr-1" id="one_month">1M</button>
-                            <button class="btn btn-sm btn-outline-secondary mr-1" id="six_months">6M</button>
-                            <button class="btn btn-sm btn-outline-secondary mr-1 active" id="one_year">1Y</button>
+                            @if (totalDays >= 30)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary mr-1" id="one_month">1M</button>
+                            }
+                            @if (totalDays > 30 && totalDays >= 180)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary mr-1" id="six_months">6M</button>
+                            }
+                            @if (totalDays > 180 && totalDays >= 365)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary mr-1 active" id="one_year">1Y</button>
+                            }
                             <button class="btn btn-sm btn-outline-secondary" id="all">ALL</button>
                         </div>
                     </div>
@@ -135,7 +145,7 @@
                                             <tr>
                                                 <td>@x</td>
                                                 <td>@loan.UserAccount</td>
-                                                <td>₦@loan.AmountRequested.ToString("N2")</td>
+                                                <td>₦@((loan.AmountRequested/100).ToString("N2"))</td>
                                                 <td>@loan.DateApplied.ToString("dd MMM yyyy")</td>
                                                 <td>
                                                     @switch (loan.Status)
@@ -176,7 +186,7 @@
                         <div class="card-icon">
                             <i class="far fa-question-circle"></i>
                         </div>
-                        <h4>₦@Model.TotalOverdue.ToString("N2")</h4>
+                        <h4>₦@((Model.TotalOverdue/100).ToString("N2"))</h4>
                         <div class="card-description">Is overdue for payment</div>
                     </div>
                     <div class="card-body p-0">
@@ -186,7 +196,8 @@
                                     <h4>Highest Balance</h4>
                                 </div>
                                 <div class="ticket-info">
-                                    <div>₦@Model.HighestBalance.GetValueOrDefault().ToString("N2")</div>
+                                    <div>@Model.HighestBalanceUserName</div>
+                                    <div>₦@((Model.HighestBalance.GetValueOrDefault()/100).ToString("N2"))</div>
                                 </div>
                             </a>
                             <a href="javascript:void(0);" class="ticket-item">
@@ -194,7 +205,8 @@
                                     <h4>Lowest Balance</h4>
                                 </div>
                                 <div class="ticket-info">
-                                    <div>₦@Model.LowestBalance.GetValueOrDefault().ToString("N2")</div>
+                                    <div>@Model.LowestBalanceUserName</div>
+                                    <div>₦@((Model.LowestBalance.GetValueOrDefault()/100).ToString("N2"))</div>
                                 </div>
                             </a>
                         </div>
@@ -228,7 +240,7 @@
                 dataLabels: {
                     enabled: false
                 },
-
+                
                 series: [{
                     data: @JsonConvert.SerializeObject(Model.Data)
                 },
@@ -287,60 +299,57 @@
 
                 activeEl.target.classList.add('active')
             }
-        @if(Model.MaximumDate != default)
-        {
-            if (Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays >= 30)
+          
+            @if(Model.MaximumDate != default)
             {
-                <text>
-                    document.querySelector("#one_month").addEventListener('click', function (e) {
+
+                if (totalDays <= 30)
+                {
+                    <text>
+                        document.querySelector("#one_month").addEventListener('click', function (e) {
+                            resetCssClasses(e)
+                            chart.updateOptions({
+                                xaxis: {
+                                    min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(30)).ToString("dd MMM yyy")').getTime(),
+                                    max: new Date('@Model.MaximumDate.ToString("dd MMM yyy")').getTime(),
+                                }
+                            })
+                        })
+                    </text>
+                }
+
+                if (totalDays > 30 && totalDays >= 180)
+                {
+                    <text>
+                        document.querySelector("#six_months").addEventListener('click', function (e) {
                         resetCssClasses(e)
                         chart.updateOptions({
                             xaxis: {
-                                min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(30)).ToString("dd MMM yyy")').getTime(),
+                                min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(180)).ToString("dd MMM yyy")').getTime(),
                                 max: new Date('@Model.MaximumDate.ToString("dd MMM yyy")').getTime(),
-                            }
+                                }
+                            })
                         })
-                    })
-                </text>
-            }
+                    </text>
+                }
 
-            if (Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays >= 180)
-            {
-                <text>
-                    document.querySelector("#six_months").addEventListener('click', function (e) {
-                    resetCssClasses(e)
-                    chart.updateOptions({
-                        xaxis: {
-                            min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(180)).ToString("dd MMM yyy")').getTime(),
-                            max: new Date('@Model.MaximumDate.ToString("dd MMM yyy")').getTime(),
-                            }
+                if (totalDays > 180 && totalDays >= 365)
+                {
+                    <text>
+                          document.querySelector("#one_year").addEventListener('click', function (e) {
+                            resetCssClasses(e)
+                            chart.updateOptions({
+                                xaxis: {
+                                    min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(365)).ToString("dd MMM yyy")').getTime(),
+                                    max: new Date('@Model.MaximumDate.ToString("dd MMM yyy")').getTime(),
+                                }
+                            })
                         })
-                    })
-                </text>
+                    </text>
+                }
             }
+        
 
-            if (Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays >= 365)
-            {
-                <text>
-                      document.querySelector("#one_year").addEventListener('click', function (e) {
-                        resetCssClasses(e)
-                        chart.updateOptions({
-                            xaxis: {
-                                min: new Date('@Model.MaximumDate.Subtract(TimeSpan.FromDays(365)).ToString("dd MMM yyy")').getTime(),
-                                max: new Date('@Model.MaximumDate.ToString("dd MMM yyy")').getTime(),
-                            }
-                        })
-                    })
-                </text>
-            }
-        }
-        
-            
-            
-        
-            
-            
-            
             document.querySelector("#all").addEventListener('click', function (e) {
                 resetCssClasses(e)
                 chart.updateOptions({

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Monochrome.Module.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using Monochrome.Module.Core.Areas.Admin.ViewModels;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
@@ -21,7 +22,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             _transactionRepo = transactionRepo;
         }
 
-        public IActionResult Index(long accountId, DateTime? from, DateTime? to, bool statement, int page = 1)
+        public IActionResult Index(long accountId, DateTime? from, DateTime? to, string statement, int page = 1)
         {
             var transactions = _transactionRepo.AsQueryable()
                 .Include(n => n.UserAccount.User)
@@ -123,10 +124,16 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                 model.Pages = pages.ToArray();
             }
 
-            if (statement)
+            if (statement == "on")
             {
+                var tranStatement = transactions.Select(k => new TransactionStatement
+                {
+                    Amount = k.Amount,
+                    Date = k.Date,
+                    Type = k.Type
+                });
                 Response.Headers.Add("Content-Disposition", $"attachment; filename={transactions.First().UserAccount.User.UserName}statement.csv");
-                var by = Encoding.UTF8.GetBytes(CsvConverter.ExportCsv(transactions));
+                var by = Encoding.UTF8.GetBytes(CsvConverter.ExportCsv(tranStatement));
                 return new FileContentResult(by, "text/csv");
             }
 

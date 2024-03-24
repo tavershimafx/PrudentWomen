@@ -276,7 +276,6 @@ namespace Monochrome.Module.Core.Services
 
             HttpClient httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Add("mono-sec-key", secretKey.Value);
-            //_httpClient.DefaultRequestHeaders.Add("x-realtime", _configuration["MonoApi:RealTime"]);
             var response = await httpClient.GetAsync(url);
             var data = await response.Content.ReadAsStringAsync();
             var jsonSettings = new JsonSerializerSettings()

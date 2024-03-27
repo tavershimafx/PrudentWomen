@@ -9,5 +9,7 @@
         public static string SecretKey => "SecretKey";
 
         public static string PublicKey => "PublicKey";
+
+        public static string LoanApplicationFee => "LoanApplicationFee";
     }
 }

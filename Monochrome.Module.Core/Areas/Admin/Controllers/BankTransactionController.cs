@@ -149,5 +149,18 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             ModelState.AddModelError("Errors", result.Error);
             return BadRequest(ModelState);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> BulkMap(string transactionId, IEnumerable<BulkEntryItem> bulkUsers)
+        {
+            var result = await _bankManager.BulkIdentify(transactionId, bulkUsers);
+            if (result.Succeeded)
+            {
+                return Ok("Transaction successful.");
+            }
+
+            ModelState.AddModelError("Errors", result.Error);
+            return BadRequest(ModelState);
+        }
     }
 }

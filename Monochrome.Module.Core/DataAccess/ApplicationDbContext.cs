@@ -49,6 +49,8 @@ namespace Monochrome.Module.Core.DataAccess
             builder.Entity<UserAccount>().ToTable("Prudent.UserAccounts");
             builder.Entity<UserTransaction>().ToTable("Prudent.UserTransactions");
             builder.Entity<Loan>().ToTable("Prudent.Loans");
+            builder.Entity<LoanGuarantor>().ToTable("Prudent.LoanGuarantors");
+            builder.Entity<LoanRepaymentHistory>().ToTable("Prudent.LoanRepaymentHistories");
             builder.Entity<ApplicationSetting>().ToTable("Prudent.ApplicationSettings");
             builder.Entity<SyncLog>().ToTable("Prudent.SyncLogs");
             builder.Entity<LoanDisbursement>().ToTable("Prudent.LoanDisbursements");

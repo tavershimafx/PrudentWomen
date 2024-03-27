@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Monochrome.Module.Core.DataAccess;
 using Monochrome.Module.Core.Extensions;
 using Monochrome.Module.Core.Helpers;
@@ -14,6 +15,7 @@ namespace Monochrome.Module.Core.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly IRepository<string, User> _userRepository;
+        private readonly IRepository<string, Role> _roleRepo;
         private readonly IRepository<UserAccount> _userAccount;
         private readonly IRepository<UserTransaction> _userTransaction;
         private readonly IRepository<BankTransaction> _bankTransactionRepo;
@@ -23,7 +25,7 @@ namespace Monochrome.Module.Core.Services
         public BankManager(IHttpClientFactory httpClient, IConfiguration configuration, IRepository<string, User> userRepository,
             IRepository<UserAccount> userAccount, IRepository<UserTransaction> userTransaction,
             IRepository<string, ApplicationSetting> appSetting, IRepository<BankTransaction> bankTransactionRepo,
-            IRepository<SyncLog> syncLogs)
+            IRepository<SyncLog> syncLogs, IRepository<string, Role> roleRepo)
         {
             _httpClientFactory = httpClient;
             _configuration = configuration;
@@ -33,6 +35,7 @@ namespace Monochrome.Module.Core.Services
             _bankTransactionRepo = bankTransactionRepo;
             _appSetting = appSetting;
             _syncLogs = syncLogs;
+            _roleRepo = roleRepo;
         }
 
         /// <summary>
@@ -210,11 +213,13 @@ namespace Monochrome.Module.Core.Services
                                 Amount = transaction.Amount,
                                 Type = transaction.Type,
                                 Date = transaction.Date,
-                                Balance = 0
+                                Balance = 0,
+                                Narration = transaction.Narration
                             });
 
                             account.Balance += transaction.Amount;
                             transaction.IsIdentified = true;
+                            transaction.ManualMap = false;
                         }
                     }
 
@@ -249,11 +254,13 @@ namespace Monochrome.Module.Core.Services
                         Amount = existing.Amount,
                         Type = existing.Type,
                         Date = existing.Date,
-                        Balance = 0
+                        Balance = 0,
+                        Narration = existing.Narration
                     });
 
                     account.Balance += existing.Amount;
                     existing.IsIdentified = true;
+                    existing.ManualMap = true;
 
                     await _bankTransactionRepo.SaveChangesAsync();
                     return new Result<bool>() { Succeeded = true };
@@ -262,7 +269,175 @@ namespace Monochrome.Module.Core.Services
                 return new Result<bool>() { Succeeded = false, Error = "Unable to find user!" };
             }
 
-            return new Result<bool>() { Succeeded = false, Error = "Transaction Id does not exist!" };
+            return new Result<bool>() { Succeeded = false, Error = "Transaction does not exist!" };
+        }
+
+        public async Task<Result<bool>> BulkIdentify(string transactionId, IEnumerable<BulkEntryItem> bulkUsers)
+        {
+            var existing = _bankTransactionRepo.AsQueryable().FirstOrDefault(k => k._Id == transactionId);
+            if (existing != null)
+            {
+                var validateResponse = ValidateUsers(bulkUsers.Select(k => k.Username));
+                if (validateResponse.Succeeded)
+                {
+                    List<UserAccount> transactingAccounts = new();
+                    foreach (var bulkItem in bulkUsers)
+                    {
+                        var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == bulkItem.Username);
+                        var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
+                        _userTransaction.Insert(new UserTransaction()
+                        {
+                            UserAccountId = account.Id,
+                            Amount = existing.Amount,
+                            Type = existing.Type,
+                            Date = existing.Date,
+                            Balance = 0,
+                            Narration = existing.Narration
+                        });
+
+                        account.Balance += bulkItem.Amount;
+                        transactingAccounts.Add(account);
+                    }
+
+                    existing.IsIdentified = true;
+                    existing.ManualMap = true;
+
+                    await _bankTransactionRepo.SaveChangesAsync();
+                    return new Result<bool>() { Succeeded = true };
+                }
+                
+                return new Result<bool>() { Succeeded = false, Error = validateResponse.Error };
+            }
+
+            return new Result<bool>() { Succeeded = false, Error = "Transaction does not exist!" };
+        }
+
+        public BankTransaction GetTransaction(long transactionId)
+        {
+            return _bankTransactionRepo.AsQueryable().FirstOrDefault(k => k.Id == transactionId);
+        }
+
+        public UserAccount GetAccount(string userId)
+        {
+            return _userAccount.AsQueryable().FirstOrDefault(k => k.UserId == userId);
+        }
+
+        /// <summary>
+        /// Credits the super admin account which represents the account of the organisation the requested 
+        /// amount
+        /// </summary>
+        /// <param name="amount">Amount in kobo</param>
+        public void CreditSuperAccount(long sourceAccountId, decimal amount, string creditNarration, string debitNarration = "")
+        {
+            var superRole = _roleRepo.AsQueryable().FirstOrDefault(k => k.Name == "SuperAdmin");
+            var user = _userRepository.AsQueryable()
+                .Include(n => n.UserRoles)
+                .FirstOrDefault(k => k.UserRoles.Any(p => p.RoleId == superRole.Id));
+            var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
+
+            var sourceAccount = _userAccount.AsQueryable().FirstOrDefault(n => n.Id == sourceAccountId);
+            var sourceTransaction = new UserTransaction()
+            {
+                Amount = amount,
+                UserAccountId = sourceAccount.Id,
+                Type = "debit",
+                Date = DateTime.Now,
+                Narration = string.IsNullOrEmpty(debitNarration)? creditNarration : debitNarration
+            };
+            sourceAccount.Balance -= amount;
+
+            var userTransaction = new UserTransaction()
+            {
+                Amount = amount,
+                UserAccountId = account.Id,
+                Type = "credit",
+                Date = DateTime.Now,
+                Narration = creditNarration
+            };
+            account.Balance += amount;
+
+            _userTransaction.Insert(sourceTransaction);
+            _userTransaction.Insert(userTransaction);
+            _userTransaction.SaveChanges();
+
+            // send email to user
+        }
+
+        /// <summary>
+        /// Debits the super admin account which represents the account of the organisation the requested 
+        /// amount
+        /// </summary>
+        /// <param name="amount">Amount in kobo</param>
+        public void DebitSuperAccount(long destinationAccountId, decimal amount, string creditNarration, string debitNarration = "")
+        {
+            var superRole = _roleRepo.AsQueryable().FirstOrDefault(k => k.Name == "SuperAdmin");
+            var user = _userRepository.AsQueryable()
+                .Include(n => n.UserRoles)
+                .FirstOrDefault(k => k.UserRoles.Any(p => p.RoleId == superRole.Id));
+            var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
+
+            var userTransaction = new UserTransaction()
+            {
+                Amount = amount,
+                UserAccountId = account.Id,
+                Type = "debit",
+                Date = DateTime.Now,
+                Narration = string.IsNullOrEmpty(debitNarration) ? creditNarration : debitNarration
+            };
+            account.Balance -= amount;
+
+            var destinationAccount = _userAccount.AsQueryable().FirstOrDefault(n => n.Id == destinationAccountId);
+            var destinationTransaction = new UserTransaction()
+            {
+                Amount = amount,
+                UserAccountId = destinationAccount.Id,
+                Type = "credit",
+                Date = DateTime.Now,
+                Narration = creditNarration
+            };
+            destinationAccount.Balance += amount;
+
+            _userTransaction.Insert(userTransaction);
+            _userTransaction.Insert(destinationTransaction);
+            _userTransaction.SaveChanges();
+
+            // send email to user
+        }
+
+        /// <summary>
+        /// Credits the designated account of the user with the requested amount
+        /// </summary>
+        /// <param name="amount">Amount in kobo</param>
+        public void ExecuteTransaction(long sourceAccountId, long destinationId, decimal amount, string creditNarration, string debitNarration = "")
+        {
+            var sourceAccount = _userAccount.AsQueryable().FirstOrDefault(n => n.Id == sourceAccountId);
+            var destinationAccount = _userAccount.AsQueryable().FirstOrDefault(n => n.Id == destinationId);
+            
+            var sourceTransaction = new UserTransaction()
+            {
+                Amount = amount,
+                UserAccountId = sourceAccount.Id,
+                Type = "debit",
+                Date = DateTime.Now,
+                Narration = string.IsNullOrEmpty(debitNarration) ? creditNarration : debitNarration
+            };
+            sourceAccount.Balance -= amount;
+
+            var destinationTransaction = new UserTransaction()
+            {
+                Amount = amount,
+                UserAccountId = destinationAccount.Id,
+                Type = "credit",
+                Date = DateTime.Now,
+                Narration = creditNarration
+            };
+            destinationAccount.Balance += amount;
+
+            _userTransaction.Insert(sourceTransaction);
+            _userTransaction.Insert(destinationTransaction);
+            _userTransaction.SaveChanges();
+
+            // send email to user
         }
 
         private async Task<Result<IEnumerable<BankTransaction>>> FetchTransactions(DateTime start, DateTime end)
@@ -301,5 +476,26 @@ namespace Monochrome.Module.Core.Services
             };
         }
 
+        private Result<bool> ValidateUsers(IEnumerable<string> usernames)
+        {
+            string errors = "";
+            bool hasError = false;
+            foreach (var username in usernames)
+            {
+                var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == username);
+                if (user == null)
+                {
+                    errors += $"The user {username} is invalid or does not exist.\n";
+                    hasError = true;
+                }
+            }
+
+            if (hasError)
+            {
+                return new Result<bool>() { Succeeded = false, Error = errors };
+            }
+
+            return new Result<bool>() { Succeeded = true };
+        }
     }
 }

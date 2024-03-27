@@ -1,9 +1,12 @@
 ﻿@using Monochrome.Module.Core.Models
+@using Microsoft.EntityFrameworkCore;
 @using Monochrome.Module.Core.DataAccess
+@inject IRepository<LoanGuarantor> _guarantorRepo;
 @model LoanApprovalDetails
 
 @{
     ViewData["Title"] = "Loan Approval |";
+    var guarantors = _guarantorRepo.AsQueryable().Include(k => k.User).Where(n => n.LoanId == Model.Id);
 }
 
 <!-- Start app main Content -->
@@ -28,13 +31,13 @@
                                 <div class="col-md-6">
                                     @switch (Model.Status)
                                     {
-                                        case LoanApplyStatus.Approved:
+                                        case ApplicationStatus.Approved:
                                             <div class="badge badge-success">Approved</div>
                                             break;
-                                        case LoanApplyStatus.Pending:
+                                        case ApplicationStatus.Pending:
                                             <div class="badge badge-warning">Pending</div>
                                             break;
-                                        case LoanApplyStatus.Rejected:
+                                        case ApplicationStatus.Rejected:
                                             <div class="badge badge-danger">Rejected</div>
                                             break;
                                         default:
@@ -66,7 +69,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Amount Granted</label>
-                                        @if (Model.Status == LoanApplyStatus.Approved)
+                                        @if (Model.Status == ApplicationStatus.Approved)
                                         {
                                             <input type="text" value="@($"₦{Model.AmountGranted:N2}")" disabled class="form-control">
                                         }
@@ -122,13 +125,7 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Guarators</label>
-                                        <input type="text" value="@Model.Guarantors" disabled class="form-control">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Click to view supporting document</label>
                                         @foreach (var item in Model.SupportingDocuments.Split(","))
@@ -141,6 +138,55 @@
                                     <div class="form-group">
                                         <label>Comments</label>
                                         <textarea asp-for="Comments" class="form-control"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <label>Gurantors</label>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-md v_center">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Guarantor</th>
+                                                <th>Amount Requested</th>
+                                                <th>Amount Vouched</th>
+                                                <th>Date Requested</th>
+                                                <th>Status</th>
+                                                <th>Date Approved</th>
+                                                <th>Comment</th>
+                                            </tr>
+                                            @{
+                                                int x = 0;
+                                                foreach (var guarantor in guarantors)
+                                                {
+                                                    x++;
+                                                    <tr>
+                                                        <td>@x</td>
+                                                        <td title="@guarantor.User.FirstName @guarantor.User.LastName">@guarantor.User.UserName</td>
+                                                        <td>₦@((guarantor.AmountRequested / 100).ToString("N2"))</td>
+                                                        <td>₦@((guarantor.AmountToVouch / 100).ToString("N2"))</td>
+                                                        <td>@guarantor.DateCreated.ToString("dd MMM yyyy")</td>
+                                                        <td>
+                                                            @switch (guarantor.Status)
+                                                            {
+                                                                case ApplicationStatus.Approved:
+                                                                    <div class="badge badge-success">Approved</div>
+                                                                    break;
+                                                                case ApplicationStatus.Pending:
+                                                                    <div class="badge badge-warning">Pending</div>
+                                                                    break;
+                                                                case ApplicationStatus.Rejected:
+                                                                    <div class="badge badge-danger">Rejected</div>
+                                                                    break;
+                                                                default:
+                                                                    break;
+                                                            }
+                                                        </td>
+                                                        <td>@guarantor.LastUpdated?.ToString("dd MMM yyyy")</td>
+                                                        <td>@guarantor.Comment</td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </table>
                                     </div>
                                 </div>
                                 <div class="col-md-12">
@@ -183,8 +229,8 @@
                             </div>
                         </div>
                         <div class="card-footer bg-whitesmoke text-md-right">
-                            <button class="btn btn-primary" type="submit" disabled="@(Model.Status == LoanApplyStatus.Approved)">Approve</button>
-                            <button class="btn btn-primary" id="disburse_btn" data-id="@Model.Id" type="button" disabled="@(Model.Status != LoanApplyStatus.Approved)">Disburse</button>
+                            <button class="btn btn-primary" type="submit" disabled="@(Model.Status == ApplicationStatus.Approved)">Approve</button>
+                            <button class="btn btn-primary" id="disburse_btn" data-id="@Model.Id" type="button" disabled="@(Model.Status != ApplicationStatus.Approved)">Disburse</button>
                             <a class="btn btn-danger" href="/admin/loans/reject/?" id="reject_loan" data-id="@Model.Id">Reject</a>
                         </div>
                     </div>

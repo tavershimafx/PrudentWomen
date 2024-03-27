@@ -16,6 +16,7 @@ namespace PrudentWomen.Migrations
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DOB = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     ProfilePicture = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -362,6 +363,9 @@ namespace PrudentWomen.Migrations
                     Comments = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateDisbursed = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     DisbursementAccount = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BankNIPCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Guarantors = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SupportingDocuments = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -401,11 +405,11 @@ namespace PrudentWomen.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Narration = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Date = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     Balance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    AccountId = table.Column<long>(type: "bigint", nullable: false),
-                    UserAccountId = table.Column<long>(type: "bigint", nullable: true),
+                    UserAccountId = table.Column<long>(type: "bigint", nullable: false),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -429,7 +433,91 @@ namespace PrudentWomen.Migrations
                         name: "FK_Prudent.UserTransactions_Prudent.UserAccounts_UserAccountId",
                         column: x => x.UserAccountId,
                         principalTable: "Prudent.UserAccounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Prudent.LoanDisbursements",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoanId = table.Column<long>(type: "bigint", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PaymentGatewayReference = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GatewayErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    DisbursementAccount = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateDisbursed = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Prudent.LoanDisbursements", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanDisbursements_Mono.Users_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "Mono.Users",
                         principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanDisbursements_Mono.Users_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "Mono.Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanDisbursements_Prudent.Loans_LoanId",
+                        column: x => x.LoanId,
+                        principalTable: "Prudent.Loans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Prudent.LoanGuarantors",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    LoanId = table.Column<long>(type: "bigint", nullable: false),
+                    AmountToVouch = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AmountRequested = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Comment = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Prudent.LoanGuarantors", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanGuarantors_Mono.Users_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "Mono.Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanGuarantors_Mono.Users_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "Mono.Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanGuarantors_Mono.Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Mono.Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanGuarantors_Prudent.Loans_LoanId",
+                        column: x => x.LoanId,
+                        principalTable: "Prudent.Loans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -510,6 +598,41 @@ namespace PrudentWomen.Migrations
                 name: "IX_Prudent.BankTransactions_UpdatedById",
                 table: "Prudent.BankTransactions",
                 column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanDisbursements_CreatedById",
+                table: "Prudent.LoanDisbursements",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanDisbursements_LoanId",
+                table: "Prudent.LoanDisbursements",
+                column: "LoanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanDisbursements_UpdatedById",
+                table: "Prudent.LoanDisbursements",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanGuarantors_CreatedById",
+                table: "Prudent.LoanGuarantors",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanGuarantors_LoanId",
+                table: "Prudent.LoanGuarantors",
+                column: "LoanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanGuarantors_UpdatedById",
+                table: "Prudent.LoanGuarantors",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanGuarantors_UserId",
+                table: "Prudent.LoanGuarantors",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Prudent.Loans_ApproverId",
@@ -606,7 +729,10 @@ namespace PrudentWomen.Migrations
                 name: "Prudent.BankTransactions");
 
             migrationBuilder.DropTable(
-                name: "Prudent.Loans");
+                name: "Prudent.LoanDisbursements");
+
+            migrationBuilder.DropTable(
+                name: "Prudent.LoanGuarantors");
 
             migrationBuilder.DropTable(
                 name: "Prudent.RegCodes");
@@ -619,6 +745,9 @@ namespace PrudentWomen.Migrations
 
             migrationBuilder.DropTable(
                 name: "Mono.Roles");
+
+            migrationBuilder.DropTable(
+                name: "Prudent.Loans");
 
             migrationBuilder.DropTable(
                 name: "Prudent.UserAccounts");

@@ -2,8 +2,8 @@
 {
     public class TransactionStatement
     {
-        public string Type { get; set; }
-        public decimal Amount { get; set; }
         public DateTimeOffset Date { get; set; }
+        public decimal Credit { get; set; }
+        public decimal Debit { get; set; }
     }
 }

@@ -13,7 +13,7 @@ namespace Monochrome.Module.Core.Areas.Admin.ViewModels
         public int TotalAdmins { get; set; }
         public int TotalLoans { get; set; }
         public decimal Balance { get; set; }
-        public decimal LoanAmount { get; set; }
+        public decimal UnPaidLoans { get; set; }
         public string HighestBalanceUserName { get; set; }
         public decimal? HighestBalance { get; set; }
         public decimal? LowestBalance { get; set; }
@@ -22,6 +22,6 @@ namespace Monochrome.Module.Core.Areas.Admin.ViewModels
         public DateTimeOffset FromOneYearDate { get; set; }
         public DateTimeOffset MaximumDate { get; set; }
         public IEnumerable<object[]> Data { get; set; }
-        public IEnumerable<LoanList> Loans { get; set; }
+        public IEnumerable<LoanList> PendingLoans { get; set; }
     }
 }

@@ -42,7 +42,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                     DateApplied = n.DateApplied,
                     DateApproved = n.DateApproved,
                     UserAccount = n.UserAccount.User.UserName,
-                    Disbursed = n.DateDisbursed == null? false: true,
+                    Disbursed = n.DateDisbursed != null,
                     Repaid = n.Repaid,
                     Status = n.Status,
                     Tenure = n.Tenure
@@ -58,15 +58,15 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                 }
                 else if (search == "approved")
                 {
-                    loans = loans.Where(k => k.Status == LoanApplyStatus.Approved);
+                    loans = loans.Where(k => k.Status == ApplicationStatus.Approved);
                 }
                 else if (search == "rejected")
                 {
-                    loans = loans.Where(k => k.Status == LoanApplyStatus.Rejected);
+                    loans = loans.Where(k => k.Status == ApplicationStatus.Rejected);
                 }
                 else if (search == "pending")
                 {
-                    loans = loans.Where(k => k.Status == LoanApplyStatus.Pending);
+                    loans = loans.Where(k => k.Status == ApplicationStatus.Pending);
                 }
                 else if (search == "overdue")
                 {
@@ -171,7 +171,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                 model.Pages = pages.ToArray();
             }
 
-            ViewBag.LoanStatus = EnumHelper.ToDictionary(typeof(LoanApplyStatus)).Select(x => new SelectListItem { Text = x.Key.GetDisplayName(), Value = x.Value });
+            ViewBag.LoanStatus = EnumHelper.ToDictionary(typeof(ApplicationStatus)).Select(x => new SelectListItem { Text = x.Key.GetDisplayName(), Value = x.Value });
 
             return View(model);
         }
@@ -198,7 +198,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                 var result = await _bankManager.AccountLookup(lookup);
                 details.DisbursementAccountName = result.Data.Name;
 
-                details.OutstandingLoans = _loanRepo.AsQueryable().Where(k => k.UserAccountId == loan.UserAccountId && k.Status == LoanApplyStatus.Approved && k.Repaid == false);
+                details.OutstandingLoans = _loanRepo.AsQueryable().Where(k => k.UserAccountId == loan.UserAccountId && k.Status == ApplicationStatus.Approved && k.Repaid == false);
                 return View(details);
             }
 
@@ -237,6 +237,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             var loan = _loanRepo.AsQueryable()
                 .Include(j => j.UserAccount.User)
                 .FirstOrDefault(k => k.Id == model.Id);
+
             return View(loan);
         }
 
@@ -248,6 +249,24 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         public async Task<IActionResult> Disburse(long id)
         {
             var result = await _loanManager.DisburseLoan(id);
+            if (result.Succeeded)
+            {
+                return Ok(result.Data);
+            }
+
+            ModelState.AddModelError("Errors", result.Error);
+            return BadRequest(ModelState);
+        }
+
+        public IActionResult GetUnpaidLoans()
+        {
+            var result = _loanManager.GetUnpaidLoans();
+            return Ok(result);
+        }
+
+        public IActionResult MarkAsPaid(long transactionId, long loanId)
+        {
+            var result = _loanManager.AddRepayment(transactionId, loanId);
             if (result.Succeeded)
             {
                 return Ok(result.Data);

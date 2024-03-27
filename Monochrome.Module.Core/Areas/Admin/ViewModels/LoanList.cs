@@ -8,7 +8,7 @@ namespace Monochrome.Module.Core.Areas.Admin.ViewModels
         public decimal AmountRequested { get; set; }
         public ushort Tenure { get; set; }
         public DateTimeOffset DateApplied { get; set; }
-        public LoanApplyStatus Status { get; set; }
+        public ApplicationStatus Status { get; set; }
         public string UserAccount { get; set; }
        
         public DateTimeOffset? DateApproved { get; set; }

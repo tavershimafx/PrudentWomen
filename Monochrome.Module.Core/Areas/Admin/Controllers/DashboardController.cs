@@ -1,8 +1,6 @@
 ﻿using Monochrome.Module.Core.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
-using Monochrome.Module.Core.Areas.ViewModels;
 using Monochrome.Module.Core.DataAccess;
 using Monochrome.Module.Core.Models;
 using Monochrome.Module.Core.Areas.Admin.ViewModels;
@@ -29,18 +27,21 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
         public IActionResult Index()
         {
             var allTransactions = _transactionRepo.AsQueryable();
+            var loans = _loanRepo.AsQueryable().Where(k => k.Repaid == false);
+
             var credit = allTransactions.Where(k => k.Type == "credit").Sum(n => n.Amount);
             var debit = allTransactions.Where(k => k.Type == "debit").Sum(n => n.Amount);
+            var unpaidLoans = loans.Where(n => n.Status == ApplicationStatus.Approved && n.Repaid == false).Sum(k => k.AmountGranted);
 
-            var loans = _loanRepo.AsQueryable().Where(k => k.Repaid == false);
             var model = new DashboardViewModel()
             {
-                LoanAmount = loans.Sum(k => k.AmountGranted),
+                UnPaidLoans = unpaidLoans,
                 TotalAdmins = 2,
-                Balance = credit - debit,
+                Balance = credit - debit - unpaidLoans,
                 TotalLoans = loans.Count(),
             };
-            model.Loans = loans.Where(n => n.Status == LoanApplyStatus.Pending).Select(n => new LoanList
+
+            model.PendingLoans = loans.Where(n => n.Status == ApplicationStatus.Pending).Select(n => new LoanList
             {
                 Id = n.Id,
                 AmountRequested = n.AmountRequested,
@@ -52,7 +53,7 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
                 Status = n.Status,
                 Tenure = n.Tenure
             }); ;
-            model.TotalOverdue = model.LoanAmount;
+            model.TotalOverdue = unpaidLoans;
 
             var accounts = _userAccount.AsQueryable()
                 .Include(k => k.User).AsNoTracking().OrderBy(n => n.Balance);

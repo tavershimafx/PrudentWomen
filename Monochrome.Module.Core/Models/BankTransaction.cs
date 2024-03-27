@@ -64,6 +64,7 @@ namespace Monochrome.Module.Core.Models
         public decimal? Balance { get; set; }
         public string Currency { get; set; }
         public bool IsIdentified { get; set; }
+        public bool ManualMap { get; set; }
     }
 
     public class InitiatePayment
@@ -89,5 +90,10 @@ namespace Monochrome.Module.Core.Models
         public string Redirect_url { get; set; }
         public DateTimeOffset created_at { get; set; }
         public DateTimeOffset updated_at { get; set; }
+    }
+    public class BulkEntryItem
+    {
+        public string Username { get; set; }
+        public decimal Amount { get; set; }
     }
 }

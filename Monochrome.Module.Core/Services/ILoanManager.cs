@@ -1,5 +1,6 @@
 ﻿using Monochrome.Module.Core.Areas.Admin.ViewModels;
 using Monochrome.Module.Core.Helpers;
+using Monochrome.Module.Core.Models;
 
 namespace Monochrome.Module.Core.Services
 {
@@ -12,5 +13,9 @@ namespace Monochrome.Module.Core.Services
         Result<bool> Reject(long loanId, string comment, string rejectorUserName);
 
         Task<Result<string>> DisburseLoan(long id);
+
+        IEnumerable<LoanList> GetUnpaidLoans();
+
+        Result<string> AddRepayment(long transactionId, long loanId);
     }
 }

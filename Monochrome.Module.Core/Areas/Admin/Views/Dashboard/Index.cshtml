@@ -3,7 +3,8 @@
 @model Monochrome.Module.Core.Areas.Admin.ViewModels.DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard |";
-    var totalDays = Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays;
+    var totalDays = 0D;
+    totalDays = Model.FromOneYearDate.DateTime == default? 0: Model.MaximumDate.Subtract(Model.FromOneYearDate.DateTime).TotalDays;
 }
 
 @section styles{
@@ -56,10 +57,10 @@
                     </div>
                     <div class="card-wrap">
                         <div class="card-header">
-                            <h4>Loan Amount</h4>
+                            <h4>Unpaid Loans</h4>
                         </div>
                         <div class="card-body">
-                            ₦@((Model.LoanAmount/100).ToString("N2"))
+                            ₦@((Model.UnPaidLoans/100).ToString("N2"))
                         </div>
                     </div>
                 </div>
@@ -139,7 +140,7 @@
                                     else
                                     {
                                         int x = 0;
-                                        foreach (var loan in Model.Loans)
+                                        foreach (var loan in Model.PendingLoans)
                                         {
                                             x++;
                                             <tr>
@@ -150,13 +151,13 @@
                                                 <td>
                                                     @switch (loan.Status)
                                                     {
-                                                        case LoanApplyStatus.Approved:
+                                                        case ApplicationStatus.Approved:
                                                             <div class="badge badge-success">Approved</div>
                                                             break;
-                                                        case LoanApplyStatus.Pending:
+                                                        case ApplicationStatus.Pending:
                                                             <div class="badge badge-warning">Pending</div>
                                                             break;
-                                                        case LoanApplyStatus.Rejected:
+                                                        case ApplicationStatus.Rejected:
                                                             <div class="badge badge-danger">Rejected</div>
                                                             break;
                                                         default:

@@ -1,6 +1,6 @@
 ﻿namespace Monochrome.Module.Core.Models
 {
-    public enum LoanApplyStatus
+    public enum ApplicationStatus
     {
         Pending,
 
@@ -18,7 +18,7 @@
         /// </summary>
         public ushort Tenure { get; set; }
         public DateTimeOffset DateApplied { get; set; }
-        public LoanApplyStatus Status { get; set; }
+        public ApplicationStatus Status { get; set; }
         public long UserAccountId { get; set; }
         public UserAccount UserAccount { get; set; }
         public string ApproverId { get; set; }
@@ -40,5 +40,11 @@
         /// comma seperated list of document urls
         /// </summary>
         public string SupportingDocuments { get; set; }
+    }
+    public class LoanRepaymentHistory : BaseModel
+    {
+        public long LoanId { get; set; }
+        public Loan Loan { get; set; }
+        public decimal Amount { get; set; }
     }
 }

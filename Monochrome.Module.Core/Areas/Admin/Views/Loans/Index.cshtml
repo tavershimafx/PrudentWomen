@@ -81,13 +81,13 @@
                                                 <td>
                                                     @switch (loan.Status)
                                                     {
-                                                        case LoanApplyStatus.Approved:
+                                                        case ApplicationStatus.Approved:
                                                             <div class="badge badge-success">Approved</div>
                                                             break;
-                                                        case LoanApplyStatus.Pending:
+                                                        case ApplicationStatus.Pending:
                                                             <div class="badge badge-warning">Pending</div>
                                                             break;
-                                                        case LoanApplyStatus.Rejected:
+                                                        case ApplicationStatus.Rejected:
                                                             <div class="badge badge-danger">Rejected</div>
                                                             break;
                                                         default:

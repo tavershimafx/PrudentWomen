@@ -12,8 +12,8 @@ using Monochrome.Module.Core.DataAccess;
 namespace PrudentWomen.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240321032805_RefineDisbursement")]
-    partial class RefineDisbursement
+    [Migration("20240326152308_InitialSet")]
+    partial class InitialSet
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -348,6 +348,61 @@ namespace PrudentWomen.Migrations
                     b.ToTable("Prudent.LoanDisbursements", (string)null);
                 });
 
+            modelBuilder.Entity("Monochrome.Module.Core.Models.LoanGuarantor", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+
+                    b.Property<decimal>("AmountRequested")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AmountToVouch")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("LastUpdated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("LoanId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("LoanId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Prudent.LoanGuarantors", (string)null);
+                });
+
             modelBuilder.Entity("Monochrome.Module.Core.Models.Role", b =>
                 {
                     b.Property<string>("Id")
@@ -658,6 +713,9 @@ namespace PrudentWomen.Migrations
                     b.Property<DateTimeOffset?>("LastUpdated")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("Narration")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Type")
                         .HasColumnType("nvarchar(max)");
 
@@ -794,6 +852,35 @@ namespace PrudentWomen.Migrations
                     b.Navigation("Loan");
 
                     b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("Monochrome.Module.Core.Models.LoanGuarantor", b =>
+                {
+                    b.HasOne("Monochrome.Module.Core.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("Monochrome.Module.Core.Models.Loan", "Loan")
+                        .WithMany()
+                        .HasForeignKey("LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Monochrome.Module.Core.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.HasOne("Monochrome.Module.Core.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Loan");
+
+                    b.Navigation("UpdatedBy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Monochrome.Module.Core.Models.Role", b =>

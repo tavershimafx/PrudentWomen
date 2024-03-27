@@ -191,6 +191,8 @@ namespace PrudentWomen
                 await userManager.AddToRoleAsync(superUser, "SuperAdmin");
             }
 
+            CreateSystemAccount(services, superUser.Id);
+
             var appSetting = serviceProvider.GetRequiredService<IRepository<string, ApplicationSetting>>();
             
             // account id
@@ -216,9 +218,30 @@ namespace PrudentWomen
             {
                 appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.PublicKey, Value = "" });
             }
+
+            // Loan application fee
+            if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.LoanApplicationFee) == null)
+            {
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.LoanApplicationFee, Value = "1500" });
+            }
             appSetting.SaveChanges();
             
             return true;
+        }
+
+        // create a default account to store money such as loan interest, loan application fee and others
+        // charged to the account of users
+        private static void CreateSystemAccount(IServiceCollection services, string userId)
+        {
+            var serviceProvider = services.BuildServiceProvider() as IServiceProvider;
+            var _userAccount = serviceProvider.GetRequiredService<IRepository<UserAccount>>();
+            var account = new UserAccount
+            {
+                UserId = userId,
+            };
+
+            _userAccount.Insert(account);
+            _userAccount.SaveChanges();
         }
 
         private static void RegisterHangFireJobs()

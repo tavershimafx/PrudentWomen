@@ -40,7 +40,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
 
             ViewData["Balance"] = (account.Balance/100).ToString("N2");
 
-            var loans = _loanRepo.AsQueryable().Where(n => n.UserAccountId == account.Id && n.Status == LoanApplyStatus.Approved);
+            var loans = _loanRepo.AsQueryable().Where(n => n.UserAccountId == account.Id && n.Status == ApplicationStatus.Approved);
             var total = loans.Sum(n => n.AmountGranted);
             ViewData["Loan"] = (total/100).ToString("N2");
 

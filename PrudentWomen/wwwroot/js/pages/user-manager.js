@@ -51,7 +51,7 @@ $('[data-user]').click(function (e) {
             processData: false,
             async: false,
             success: function (xhr) {
-                window.location = window.location;
+                window.location.reload();
             },
             error: function (xhr) {
                 requestError()
@@ -78,7 +78,7 @@ $("[data-status]").click(function (e) {
         processData: false,
         async: false,
         success: function (xhr) {
-            window.location = window.location;
+            window.location.reload();
         },
         error: function (xhr) {
             $(".page-loader-wrapper").hide()
@@ -110,7 +110,8 @@ $('#new_user').click(function (e) {
             processData: false,
             async: false,
             success: function (xhr) {
-                window.location = window.location;
+                console.log("created successfully")
+                window.location.reload();
             },
             error: function (xhr) {
                 $(".page-loader-wrapper").hide()
@@ -149,7 +150,7 @@ $('[data-delete-user]').click(function (e) {
             processData: false,
             async: false,
             success: function (xhr) {
-                window.location = window.location;
+                window.location.reload();
             },
             error: function (xhr) {
                 $(".page-loader-wrapper").hide()
@@ -178,7 +179,7 @@ $('#new_role').click(function (e) {
             processData: false,
             async: false,
             success: function (xhr) {
-                window.location = window.location;
+                window.location.reload();
             },
             error: function (xhr) {
                 requestError()
@@ -223,7 +224,7 @@ $('[data-role]').click(function (e) {
             processData: false,
             async: false,
             success: function (xhr) {
-                window.location = window.location;
+                window.location.reload();
             },
             error: function (xhr) {
                 requestError()

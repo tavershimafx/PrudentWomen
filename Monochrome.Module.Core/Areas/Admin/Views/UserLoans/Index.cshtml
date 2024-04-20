@@ -34,6 +34,7 @@
                                     <th>Date Approved</th>
                                     <th>Date Disbursed</th>
                                     <th>Repaid</th>
+                                    <th>Action</th>
                                 </tr>
                                 @{
                                     if (!Model.Data.Any())
@@ -72,6 +73,14 @@
                                                 <td>@($"{loan.DateApproved:dd MMM yyyy}")</td>
                                                 <td>@($"{loan.DateDisbursed:dd MMM yyyy}")</td>
                                                 <td><div class="badge badge-@(loan.Repaid? "success" : "danger")"><i class="fa fa-@(loan.Repaid ? "check" : "times")"></i></div></td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <i class="fas fa-ellipsis-v p-10" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+                                                        <div class="dropdown-menu">
+                                                            <a class="dropdown-item" href="/admin/userloans/RepayHistory/?id=@loan.Id">View History</a>
+                                                        </div>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         }
                                     }

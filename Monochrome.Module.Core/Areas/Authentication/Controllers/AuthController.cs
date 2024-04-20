@@ -75,7 +75,7 @@ namespace Monochrome.Module.Core.Areas.Authentication.Controllers
                 if (result.Succeeded && user.Status == UserStatus.Active)
                 {
                     _logger.LogInformation("User logged in.");
-                    if (await _userManager.IsInRoleAsync(user, "Customer"))
+                    if (await _userManager.IsInRoleAsync(user, "Member"))
                     {
                         returnUrl ??= Url.Action("Index", "UserDashboard", new { area = "Admin" });
                     }
@@ -143,7 +143,7 @@ namespace Monochrome.Module.Core.Areas.Authentication.Controllers
                     if (result.Succeeded)
                     {
                         MarkCodeAsUsed(model.RegistrationCode);
-                        await _userManager.AddToRoleAsync(user, "Customer");
+                        await _userManager.AddToRoleAsync(user, "Member");
                         _logger.LogInformation("User created a new account with password.");
 
                         // publish user created event for consumers to work on
@@ -158,9 +158,19 @@ namespace Monochrome.Module.Core.Areas.Authentication.Controllers
                             nameof(ConfirmEmail), "Auth",
                             values: new { area = "Authentication", userId, code, returnUrl },
                             protocol: Request.Scheme);
-
-                        await _emailSender.SendEmailAsync(model.Email, "Confirm your email",
-                            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                        //
+                        await _emailSender.SendEmailAsync(model.Email, "Please Confirm Your Email Address on Prudent Women Portal",
+                            $"Welcome to the Prudent Women Portal!\r\n\r\n" +
+                            $"Thank you for registering. We're excited to have you join our community!\r\n\r\n" +
+                            $"To ensure that we have the correct email address on file and to activate your account, please click on the link below to confirm your email:\r\n\r\n" +
+                            $"<a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Confirmation Account</a>\r\n\r\n" +
+                            $"By confirming your email, you'll gain access to personalized savings and loan accounts, as well as valuable information about our organization's activities, including the Cooperative, Food Bank, Global Godly Outreach Programme, and more.\r\n\r\n" +
+                            $"If you have any questions or need assistance, feel free to reach out to us at admin@prudentwomen.org.\r\n\r\n" +
+                            $"Thank you for joining us on Prudent Women Portal. We look forward to empowering and supporting you on your journey!\r\n\r\n" +
+                            $"Best regards,\r\n\r\n" +
+                            $"Mrs. Msurshima Comfort Chenge  \r\n" +
+                            $"Founder & President  \r\n " +
+                            $"Prudent Women Organisation");
 
                         return RedirectToAction("RegisterConfirmation", new { userNumber = user.PrudentNumber });
                         //if (_userManager.Options.SignIn.RequireConfirmedAccount)

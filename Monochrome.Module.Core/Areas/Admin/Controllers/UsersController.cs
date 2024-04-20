@@ -75,28 +75,38 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new User { Email = model.Email, FirstName = model.FirstName, LastName = model.LastName };
-                await _userStore.SetUserNameAsync(user, user.PrudentNumber, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, model.Email, CancellationToken.None);
+                var user = new User 
+                { 
+                    Email = model.Email,
+                    NormalizedEmail = model.Email.Normalize().ToUpperInvariant(),
+                    FirstName = model.FirstName, 
+                    LastName = model.LastName,
+                    UserName = model.UserName,
+                    NormalizedUserName = model.UserName.Normalize().ToUpperInvariant()
+                };
 
                 var result = await _userManager.CreateAsync(user, model.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
-
-                    var userId = await _userManager.GetUserIdAsync(user);
+                    
+                    //var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
                     var callbackUrl = Url.Action(
-                        nameof(Authentication.Controllers.AuthController.ConfirmEmail), "Auth",
-                        values: new { area = "Authentication", userId, code },
-                        protocol: Request.Scheme);
+                            nameof(Authentication.Controllers.AuthController.ConfirmEmail), "Auth",
+                            values: new { area = "Authentication", userId = user.Id, code },
+                            protocol: Request.Scheme);
 
                     await _emailSender.SendEmailAsync(model.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                    var newRoles = _roleRepository.AsQueryable().Where(n => model.RoleIds.Any(k => k == n.Id));
+                    var newRoles = _roleRepository.AsQueryable().QueryInChunksOf(10)
+                        .Where(n => model.RoleIds.Any(k => k == n.Id));
+
                     if (newRoles != null && newRoles.Any())
                     {
                         foreach (var role in newRoles)

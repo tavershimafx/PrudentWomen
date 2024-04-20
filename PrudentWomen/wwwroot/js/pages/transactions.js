@@ -30,7 +30,7 @@ $('[data-identify]').click(function (e) {
             processData: false,
             async: false,
             success: function (xhr) {
-                window.location = window.location;
+                window.location.reload();
             },
             error: function (xhr) {
                 $(".page-loader-wrapper").hide()
@@ -62,19 +62,19 @@ $('[data-bulk]').click(function (e) {
         e.preventDefault()
         $("#bulk_errors").empty()
         
-        let bulkUsers = []
+        var bulkUsers = []
         $('#bulk_identify_modal form .modal-body').children('div.row').each((index, item) => {
             let user = {
-                username: $($(item).find('[name="username"]')[0]).val(),
-                amount: Number($($(item).find('.item-amount')[0]).val())
+                Username: $($(item).find('[name="username"]')[0]).val(),
+                Amount: Number($($(item).find('.item-amount')[0]).val())
             } 
 
-            if (user.username == undefined || user.username.trim() == '') {
+            if (user.Username == undefined || user.Username.trim() == '') {
                 $("#bulk_errors").html(`Please verify your entries and make sure a username field is not empty.`)
                 return
             }
 
-            if (user.amount == NaN || user.amount == 0) {
+            if (user.Amount == NaN || user.Amount == 0) {
                 $("#bulk_errors").html(`Please verify your entries and make sure all amounts are valid numbers.`)
                 return
             }
@@ -82,16 +82,16 @@ $('[data-bulk]').click(function (e) {
             bulkUsers.push(user)
         })
 
-        let sumTotal = bulkUsers.reduce((a, b) => (a.amount + b.amount))
+        let sumTotal = bulkUsers.reduce((a, b) => (a.Amount + b.Amount))
         if (isNaN(sumTotal)) {
-            sumTotal = bulkUsers[0].amount
+            sumTotal = bulkUsers[0].Amount
         }
 
-        if (sumTotal != totalBulkAmount) {
+        if (Number(sumTotal) != Number(totalBulkAmount)) {
             $("#bulk_errors").html(`<p class="text-danger">
                 The total amount entered does not match the amount made in the transaction.
                 The total amount entered is <b>₦${formatMoney(sumTotal.toFixed(2))}</b> 
-                while the transaction has <b>₦${formatMoney((totalBulkAmount).toFixed(2))}</b></p>`)
+                while the transaction has <b>₦${formatMoney(totalBulkAmount)}</b></p>`)
             return
         }
 
@@ -99,14 +99,15 @@ $('[data-bulk]').click(function (e) {
         $("#bulk_errors").empty()
         $(".page-loader-wrapper").toggle()
 
+        let data = { bulkUsers: bulkUsers }
+
         $.ajax({
             method: "POST",
             url: `/admin/banktransaction/BulkMap/?transactionId=${transactionId}`,
-            data: bulkUsers,
-            processData: false,
-            async: false,
+            data: data,
+            dataType: 'json',
             success: function (xhr) {
-                console.log("bulk response", xhr)
+                location.reload()
             },
             error: function (xhr) {
                 $(".page-loader-wrapper").hide()
@@ -118,7 +119,6 @@ $('[data-bulk]').click(function (e) {
             }
         })
     })
-
 });
 
 function createAppendEvent(){
@@ -183,8 +183,7 @@ $("#disburse_btn").click(function (e) {
         processData: false,
         async: false,
         success: function (xhr) {
-            console.log(xhr)
-            window.open(xhr);
+            location.reload();
         },
         error: function (xhr) {
             $(".page-loader-wrapper").hide()
@@ -195,6 +194,14 @@ $("#disburse_btn").click(function (e) {
             }
         }
     })
+})
+
+$('[data-disburse]').click(function (e) {
+    var me = $(this)
+    let id = me.data("disburse")
+
+    $("#disburse_id").val(id)
+    $("#disburse_modal").modal("show")
 })
 
 $("#DisbursementAccount").change(function (e) {
@@ -234,7 +241,6 @@ $('[data-loan]').click(function (e) {
 
     getUnpaidLoans(transactionId)
     $("#loan_modal").modal("show")
-
 })
 
 function getUnpaidLoans(transactionId) {
@@ -244,22 +250,23 @@ function getUnpaidLoans(transactionId) {
         processData: false,
         async: false,
         success: function (xhr) {
+            $('#loan_modal .modal-body table').html("")
             xhr.forEach((item, index) => {
                 let row = `<tr>
                                 <td>${index + 1}</td>
                                 <td>${item.userAccount}</td>
-                                <td>₦${item.amountRequested}</td>
-                                <td>${item.dateApplied}</td>
+                                <td>₦${(item.amountRequested / 100).toFixed(2)}</td>
+                                <td>${new Date(item.dateApplied).toLocaleDateString()}</td>
                                 <td>${item.tenure} Month(s)</td>
                                 <td>${getStatus(item.status)}</td>
-                                <td>${item.dateApproved}</td>
-                                <td><div class="badge badge-${item.repaid ? "info" : "danger"}"><i class="fa fa-${item.repaid ? "check" : "times"}"></i></div></td>
+                                <td>${new Date(item.dateApproved).toLocaleDateString()}</td>
                                 <td><div class="badge badge-${item.disbursed? "success" : "warning"}"><i class="fa fa-${(item.disbursed ? "check" : "times")}"></i></div></td>
+                                <td><div class="badge badge-${item.repaid ? "info" : "danger"}"><i class="fa fa-${item.repaid ? "check" : "times"}"></i></div></td>
                                 <td>
                                     <div class="btn-group">
                                         <i class="fas fa-ellipsis-v p-10" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
                                         <div class="dropdown-menu">
-                                            <a class="dropdown-item" href="/admin/loans/MarkAsPaid/?loanId=${item.id}&transactionId=${transactionId}">Mark As Paid</a>
+                                            <a class="dropdown-item" data-loanid="${item.id}" data-loantid="${transactionId}">Mark As Paid</a>
                                         </div>
                                     </div>
                                 </td>
@@ -267,10 +274,39 @@ function getUnpaidLoans(transactionId) {
 
                 $('#loan_modal .modal-body table').append(row)
             })
+            createRepay()
         },
         error: function (xhr) {
 
         }
+    })
+}
+
+function createRepay() {
+    $('[data-loanid]').off('click')
+    $('[data-loanid]').click(function (e) {
+        var me = $(this)
+        let loanId = me.data("loanid")
+        let transactionId = me.data("loantid")
+
+        $.ajax({
+            method: "GET",
+            url: `/admin/loans/MarkAsPaid/?transactionId=${transactionId}&loanId=${loanId}`,
+            processData: false,
+            async: false,
+            success: function (xhr) {
+                window.location.reload();
+            },
+            error: function (xhr) {
+                $(".page-loader-wrapper").hide()
+                var errors = getErrors(xhr.responseJSON)
+                let errMsg = ""
+                for (var i = 0; i < errors.length; i++) {
+                    errMsg += errors[i]
+                }
+                alert(errMsg)
+            }
+        })
     })
 }
 
@@ -289,6 +325,70 @@ function getStatus(status) {
             break;
     }
 }
+
+$("#transfer_btn").click(function (e) {
+    e.preventDefault()
+    $("#trf_errors").empty()
+
+    let accountId = location.search.split("?")[1].split("&")[0].split("=")[1]
+    $("#balance_modal").modal("show")
+
+    $('#set_amt').off('click')
+    $('#set_amt').click(function (e) {
+
+        let amount = $("#bal_amt").val()
+
+        $.ajax({
+            method: "POST",
+            url: `/admin/UserTransaction/DebitAccount/?accountId=${accountId}&amount=${amount}`,
+            processData: false,
+            async: false,
+            success: function (xhr) {
+                window.location.reload();
+            },
+            error: function (xhr) {
+                $(".page-loader-wrapper").hide()
+                var errors = getErrors(xhr.responseJSON)
+                $("#trf_errors").empty()
+                for (var i = 0; i < errors.length; i++) {
+                    $("#trf_errors").append(`<span>${errors[i]}</span><br />`)
+                }
+            }
+        })
+    })
+})
+
+$("#open_bal").click(function (e) {
+    e.preventDefault()
+    $("#bal_errors").empty()
+
+    let accountId = location.search.split("?")[1].split("&")[0].split("=")[1]
+    $("#balance_modal").modal("show")
+
+    $('#set_amt').off('click')
+    $('#set_amt').click(function (e) {
+        
+        let amount = $("#bal_amt").val()
+
+        $.ajax({
+            method: "GET",
+            url: `/admin/UserTransaction/SetOpeningBalance/?accountId=${accountId}&amount=${amount}`,
+            processData: false,
+            async: false,
+            success: function (xhr) {
+                window.location.reload();
+            },
+            error: function (xhr) {
+                $(".page-loader-wrapper").hide()
+                var errors = getErrors(xhr.responseJSON)
+                $("#bal_errors").empty()
+                for (var i = 0; i < errors.length; i++) {
+                    $("#bal_errors").append(`<span>${errors[i]}</span><br />`)
+                }
+            }
+        })
+    })
+})
 
 function getErrors(response) {
     let errors = []

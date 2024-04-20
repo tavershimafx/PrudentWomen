@@ -17,17 +17,19 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
     public class LoansController : MvcBaseController
     {
         private readonly IRepository<Loan> _loanRepo;
+        private readonly IRepository<LoanRepaymentHistory> _repayHistory;
         private readonly IRepository<UserAccount> _userAccount;
         private readonly ILoanManager _loanManager;
         private readonly IBankManager _bankManager;
 
         public LoansController(IRepository<Loan> loanRepo, IRepository<UserAccount> userAccount,
-            ILoanManager loanManager, IBankManager bankManager)
+            ILoanManager loanManager, IBankManager bankManager, IRepository<LoanRepaymentHistory> repayHistory)
         {
             _loanRepo = loanRepo;
             _userAccount = userAccount;
             _loanManager = loanManager;
             _bankManager = bankManager;
+            _repayHistory = repayHistory;
         }
 
         public IActionResult Index(string search, DateTime? from, DateTime? to, int page = 1, int size = 50)
@@ -196,7 +198,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                 };
 
                 var result = await _bankManager.AccountLookup(lookup);
-                details.DisbursementAccountName = result.Data.Name;
+                details.DisbursementAccountName = result.Succeeded? result.Data.Name : result.Error;
 
                 details.OutstandingLoans = _loanRepo.AsQueryable().Where(k => k.UserAccountId == loan.UserAccountId && k.Status == ApplicationStatus.Approved && k.Repaid == false);
                 return View(details);
@@ -274,6 +276,26 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
 
             ModelState.AddModelError("Errors", result.Error);
             return BadRequest(ModelState);
+        }
+
+        public IActionResult RepayHistory(long id, int page = 1, int size = 50)
+        {
+            var loans = _repayHistory.AsQueryable()
+                .Where(n => n.LoanId == id)
+                .OrderByDescending(k => k.DateCreated);
+
+            var model = new PaginatedTable<LoanRepaymentHistory>()
+            {
+                TotalItems = loans.Count()
+            };
+
+            model.Data = loans.Skip((size * page) - size).Take(size);
+
+            model.PageSize = size;
+            model.TotalPages = (int)Math.Ceiling((double)model.TotalItems / size);
+            model.Page = page;
+
+            return View(model);
         }
 
         public IActionResult DisburseComplete(string paymentRef)

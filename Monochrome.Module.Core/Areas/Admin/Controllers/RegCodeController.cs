@@ -124,6 +124,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "SuperAdmin")]
         public IActionResult Generate(int qty)
         {
             List<UserRegCode> cds = new();
@@ -143,6 +144,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [Authorize(Roles = "SuperAdmin")]
         public IActionResult DeleteAll()
         {
             _regCodeRepo.DeleteRange(_regCodeRepo.AsQueryable());

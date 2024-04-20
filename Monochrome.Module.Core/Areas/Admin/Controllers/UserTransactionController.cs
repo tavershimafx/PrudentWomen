@@ -7,6 +7,7 @@ using Monochrome.Module.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using Monochrome.Module.Core.Areas.Admin.ViewModels;
+using Microsoft.AspNetCore.Identity;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
@@ -15,11 +16,16 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
     public class UserTransactionController : MvcBaseController
     {
         private readonly IRepository<UserTransaction> _transactionRepo;
+        private readonly IBankManager _bankManager;
+        private readonly UserManager<User> _userManager;
         private int _pageSize = 50;
 
-        public UserTransactionController(IRepository<UserTransaction> transactionRepo)
+        public UserTransactionController(IRepository<UserTransaction> transactionRepo, IBankManager bankManager,
+            UserManager<User> userManager)
         {
             _transactionRepo = transactionRepo;
+            _bankManager = bankManager;
+            _userManager = userManager;
         }
 
         public IActionResult Index(long accountId, DateTime? from, DateTime? to, string statement, int page = 1)
@@ -152,8 +158,25 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             return View(model);
         }
 
-        public IActionResult DownloadStatement(long accountId, DateTime? from, DateTime? to)
+        [HttpGet]
+        public async Task<IActionResult> SetOpeningBalance(long accountId, decimal amount)
         {
+            await _bankManager.SetOpeningBalance(accountId, amount);
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DebitAccount(TransferFundsModel model)
+        {
+            var destinationUser = await _userManager.FindByNameAsync(model.DestinationUser);
+            if (destinationUser == null)
+            {
+                ModelState.AddModelError("Errors", "The destination user account was not found.");
+                return BadRequest(ModelState);
+            }
+
+            var destinationAccount = _bankManager.GetAccount(destinationUser.Id);
+            _bankManager.ExecuteTransaction(model.SourceAccountId, destinationAccount.Id, model.Amount, model.Narration);
             return Ok();
         }
     }

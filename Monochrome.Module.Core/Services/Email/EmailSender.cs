@@ -98,6 +98,21 @@ namespace Monochrome.Module.Core.Services.Email
             await SendAsync(emailMessage, _emailConfig.NoReplyEmail, _emailConfig.NoReplyPassword);
         }
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="to"></param>
+        /// <param name="subject"></param>
+        /// <param name="htmlMessage"></param>
+        /// <returns></returns>
+        public void SendEmail(string to, string subject, string htmlMessage)
+        {
+            var email = new EmailMessage(new string[] { to }, subject, htmlMessage);
+
+            var emailMessage = CreateEmailMessage(email, new string[] { _emailConfig.NoReplyEmail }, _emailConfig.DisplayName);
+            Send(emailMessage, _emailConfig.NoReplyEmail, _emailConfig.NoReplyPassword);
+        }
+
         private MimeMessage CreateEmailMessage(EmailMessage message, string[] from, string displayUserName)
         {
             var emailMessage = new MimeMessage();

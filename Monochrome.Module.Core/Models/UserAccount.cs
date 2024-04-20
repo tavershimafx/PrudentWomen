@@ -1,5 +1,8 @@
-﻿namespace Monochrome.Module.Core.Models
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace Monochrome.Module.Core.Models
 {
+    [Index(nameof(UserId), IsUnique = true)]
     public class UserAccount : BaseModel
     {
         public decimal Balance { get; set; }

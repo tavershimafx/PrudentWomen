@@ -126,6 +126,9 @@ namespace PrudentWomen.Migrations
                     b.Property<string>("CreatedById")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("DataType")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTimeOffset>("DateCreated")
                         .HasColumnType("datetimeoffset");
 
@@ -182,6 +185,9 @@ namespace PrudentWomen.Migrations
 
                     b.Property<DateTimeOffset?>("LastUpdated")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("ManualMap")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Narration")
                         .HasColumnType("nvarchar(max)");
@@ -399,6 +405,47 @@ namespace PrudentWomen.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Prudent.LoanGuarantors", (string)null);
+                });
+
+            modelBuilder.Entity("Monochrome.Module.Core.Models.LoanRepaymentHistory", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("LastUpdated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("LoanId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("LoanId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("Prudent.LoanRepaymentHistories", (string)null);
                 });
 
             modelBuilder.Entity("Monochrome.Module.Core.Models.Role", b =>
@@ -627,7 +674,9 @@ namespace PrudentWomen.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Prudent.UserAccounts", (string)null);
                 });
@@ -879,6 +928,29 @@ namespace PrudentWomen.Migrations
                     b.Navigation("UpdatedBy");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Monochrome.Module.Core.Models.LoanRepaymentHistory", b =>
+                {
+                    b.HasOne("Monochrome.Module.Core.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("Monochrome.Module.Core.Models.Loan", "Loan")
+                        .WithMany()
+                        .HasForeignKey("LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Monochrome.Module.Core.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Loan");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("Monochrome.Module.Core.Models.Role", b =>

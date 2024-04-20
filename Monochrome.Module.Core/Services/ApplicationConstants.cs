@@ -11,5 +11,7 @@
         public static string PublicKey => "PublicKey";
 
         public static string LoanApplicationFee => "LoanApplicationFee";
+
+        public static string OpeningDate => "OpeningDate";
     }
 }

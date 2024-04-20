@@ -31,6 +31,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         [HttpPost]
         public IActionResult Index(AppSettingVm model)
         {
+            _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.OpeningDate).Value = model.OpeningDate.ToString();
             _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.AccountId).Value = model.AccountId;
             _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.SecretKey).Value = model.SecretKey;
             _appSettingRepo.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.PublicKey).Value = model.PublicKey;

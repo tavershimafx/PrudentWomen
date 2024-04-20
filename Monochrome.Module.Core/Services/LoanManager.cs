@@ -19,18 +19,14 @@ namespace Monochrome.Module.Core.Services
         private readonly IRepository<LoanRepaymentHistory> _repaymentRepo;
         private readonly IRepository<LoanGuarantor> _guarantorRepo;
         private readonly IRepository<string, User> _userRepo;
-        private readonly IRepository<string, LoanDisbursement> _disbursementRepo;
         private readonly IRepository<string, ApplicationSetting> _appSetting;
         private readonly IBankManager _bankManager;
-        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _contextAccessor;
-        private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailSender _emailSender;
 
         public LoanManager(IRepository<Loan> loanRepo, IRepository<string, User> userRepo,
             IRepository<string, ApplicationSetting> appSetting,
-            IHttpClientFactory httpClient, IConfiguration configuration, IRepository<string, LoanDisbursement> disbursementRepo,
             IHttpContextAccessor contextAccessor, IWebHostEnvironment environment, IBankManager bankManager,
             IRepository<LoanRepaymentHistory> repaymentRepo,
             IRepository<LoanGuarantor> guarantorRepo, IEmailSender emailSender)
@@ -38,9 +34,6 @@ namespace Monochrome.Module.Core.Services
             _loanRepo = loanRepo;
             _userRepo = userRepo;
             _appSetting = appSetting;
-            _httpClientFactory = httpClient;
-            _configuration = configuration;
-            _disbursementRepo = disbursementRepo;
             _contextAccessor = contextAccessor;
             _environment = environment;
             _bankManager = bankManager;
@@ -122,7 +115,7 @@ namespace Monochrome.Module.Core.Services
                     var stream = new StreamWriter(location);
                     await item.OpenReadStream().CopyToAsync(stream.BaseStream);
                     stream.Close();
-                    loan.SupportingDocuments += $"{_contextAccessor.HttpContext.Request.Host.Value}/{Path.GetFileName(location)}";
+                    loan.SupportingDocuments += $"{_contextAccessor.HttpContext.Request.Protocol}://{_contextAccessor.HttpContext.Request.Host.Value}/{Path.GetFileName(location)}";
                 }
 
                 _bankManager.CreditSuperAccount(account.Id, loanFee, "Loan application fee");
@@ -157,9 +150,13 @@ namespace Monochrome.Module.Core.Services
 
         public Result<bool> Reject(long loanId, string comment, string rejectorUserName)
         {
-            var approver = _userRepo.AsQueryable().FirstOrDefault(n => n.UserName == rejectorUserName);
+            Loan loan = _loanRepo.AsQueryable().FirstOrDefault(n => n.Id == loanId);
+            var rejecter = _userRepo.AsQueryable().FirstOrDefault(n => n.UserName == rejectorUserName);
+            loan.Status = ApplicationStatus.Rejected;
+            loan.Comments = comment;
+            loan.ApproverId = rejecter.Id;
 
-
+            _loanRepo.SaveChanges();
             return new Result<bool>() { Succeeded = true };
         }
 
@@ -182,65 +179,27 @@ namespace Monochrome.Module.Core.Services
 
         public async Task<Result<string>> DisburseLoan(long id)
         {
-            var accountSetting = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.AccountId) ?? throw new NullReferenceException("Mono account has not been configured.");
-            var secretKey = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.SecretKey) ?? throw new NullReferenceException("Mono account Secret Key has not been configured.");
+            Loan loan = _loanRepo.AsQueryable().FirstOrDefault(n => n.Id == id);
+            if (loan == null)
+                throw new InvalidOperationException($"Cannot approve an in-existent loan with id: {id}");
 
-            string url = $"{_configuration["MonoApi:BaseUrl"]}{_configuration["MonoApi:InitiatePayment"]}";
-
-            Loan loan = _loanRepo.AsQueryable().FirstOrDefault(n => n.Id == id) ?? throw new InvalidOperationException($"Unable to find loan with id: {id}");
-            LoanDisbursement disbursement = new()
+            if (loan.Status != ApplicationStatus.Approved)
             {
-                LoanId = loan.Id,
-                Amount = loan.AmountGranted,
-                DisbursementAccount = loan.DisbursementAccount,
-                Status = DisbursementStatus.Pending
-            };
-
-            _disbursementRepo.Insert(disbursement);
-            _disbursementRepo.SaveChanges();
-
-            HttpClient httpClient = _httpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.Add("mono-sec-key", secretKey.Value);
-
-            var payment = new InitiatePayment
-            {
-                Meta = new { reference = disbursement.Id },
-                Amount = (loan.AmountGranted * 100).ToString(),
-                Type = "onetime-debit",
-                Description = $"Prudent Women Corporative Loan",
-                Reference = disbursement.Id,
-                Account = loan.DisbursementAccount,
-                Redirect_url = $"{_contextAccessor.HttpContext.Request.Host.Value}/admin/Loans/disbursecomplete/"
-            };
-
-            var response = await httpClient.PostAsync(url, payment.SerializeObject());
-            var data = await response.Content.ReadAsStringAsync();
-            var jsonSettings = new JsonSerializerSettings()
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
-
-            if (response.IsSuccessStatusCode)
-            {
-                var initResponse = JsonConvert.DeserializeObject<ApiResponse<InititatePaymentResponse>>(data, jsonSettings);
-                disbursement.PaymentGatewayReference = initResponse.Data.Id;
-                _disbursementRepo.SaveChanges();
-
-                return new Result<string>()
-                {
-                    Succeeded = true,
-                    Data = initResponse.Data.Payment_link
-                };
+                return new Result<string>() { Succeeded = false, Error = "Cannot set an unapproved loan as disbursed." };
             }
 
-            var nn = JsonConvert.DeserializeObject<ApiResponse<InititatePaymentResponse>>(data, jsonSettings);
-            return new Result<string>()
+            if (loan.Disbursed)
             {
-                Succeeded = false,
-                Error = nn.Message
-            };
-        }
+                return new Result<string>() { Succeeded = false, Error = "This loan has already been disbursed." };
+            }
 
+            _bankManager.CreditSuperAccount(loan.UserAccountId, loan.AmountGranted, "Loan disbursement");
+            loan.DateDisbursed = DateTime.Now;
+            await _loanRepo.SaveChangesAsync();
+
+            return new Result<string>() { Succeeded = true, Error = "Loan marked as disbursed." };
+        }
+       
         public IEnumerable<LoanList> GetUnpaidLoans()
         {
             var loans = _loanRepo.AsQueryable()
@@ -272,10 +231,29 @@ namespace Monochrome.Module.Core.Services
                     "presented was not found in the tracking collection or the transaction Id is invalid.");
             }
 
+            if (transaction.Type != "credit")
+            {
+                return new Result<string>()
+                {
+                    Succeeded = false,
+                    Error = "Please select a credit transaction to use as loan repayment."
+                };
+            }
+
             if (transaction.IsIdentified)
             {
                 return new Result<string>() { Succeeded = false, Error = "Cannot use this transaction for a loan repayment" +
                     " because it has already been credited to a user's account." };
+            }
+
+            if (transaction.Amount > loan.AmountGranted)
+            {
+                return new Result<string>()
+                {
+                    Succeeded = false,
+                    Error = "Cannot use this transaction for a loan repayment" +
+                    " because the amount recorded by the transaction is greater than the amount granted for the loan."
+                };
             }
 
             var prevRepayments = _repaymentRepo.AsQueryable().Where(k => k.LoanId == loan.Id);
@@ -285,9 +263,20 @@ namespace Monochrome.Module.Core.Services
                 totalRepaid += prevRepayments.Sum(b => b.Amount);
             }
 
-            if ((totalRepaid + transaction.Amount) == loan.AmountGranted)
+            var interestAmount =  (loan.AmountGranted * loan.PecentInterest) / 100;
+            var tobePaid = (loan.AmountGranted + interestAmount);
+            if ((totalRepaid + transaction.Amount) > loan.AmountGranted)
             {
-                loan.Repaid = true;
+                return new Result<string>()
+                {
+                    Succeeded = false,
+                    Error = $"The amount granted for the loan was ₦{loan.AmountGranted / 100:N2} but previous repayments " +
+                    $"were made on this loan which sums up to ₦{totalRepaid / 100:N2}. The transaction marked to be added" +
+                    $" as a repayment for the loan makes the total mount to be repaid greater than the loan " +
+                    $"amount and interest. The total amount to be paid including interest is ₦{tobePaid / 100:N2} " +
+                    $" but adding this transaction as loan repayment would amount to " +
+                    $"₦{(totalRepaid + transaction.Amount) / 100:N2}"
+                };
             }
 
             var history = new LoanRepaymentHistory
@@ -296,12 +285,15 @@ namespace Monochrome.Module.Core.Services
                 Amount = transaction.Amount
             };
 
+            if ((totalRepaid + transaction.Amount) == tobePaid)
+            {
+                loan.Repaid = true;
+                _bankManager.CreditSuperAccount(loan.UserAccountId, interestAmount, "Interest on loan", "Debit for loan interest");
+            }
+
             _repaymentRepo.Insert(history);
             _repaymentRepo.SaveChanges();
 
-            var interest = (loan.PecentInterest / 100) * loan.AmountGranted;
-
-            _bankManager.CreditSuperAccount(loan.UserAccountId, interest, "Interest on loan", "Debit for loan interest");
             return new Result<string>() { Succeeded = true };
         }
     }

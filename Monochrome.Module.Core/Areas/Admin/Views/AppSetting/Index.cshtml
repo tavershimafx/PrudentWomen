@@ -22,10 +22,21 @@
                         <p class="text-muted">General settings such as, connected account Id, tax and so on.</p>
                         @foreach(var item in Model)
                         {
-                            <div class="form-group">
-                                <label>@item.Id</label>
-                                <input type="text" name="@item.Id" value="@item.Value" class="form-control">
-                            </div>
+                            if (item.Id == Monochrome.Module.Core.Services.ApplicationConstants.OpeningDate)
+                            {
+                                var converted = DateTime.TryParse(item.Value, out var openDate);
+                                <div class="form-group">
+                                    <label>@item.Id</label>
+                                    <input type="date" disabled="@(!string.IsNullOrEmpty(item.Value))" name="@item.Id" value="@(converted? openDate.ToShortDateString() : item.Value)" class="form-control">
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="form-group">
+                                    <label>@item.Id</label>
+                                    <input type="text" name="@item.Id" value="@item.Value" class="form-control">
+                                </div>
+                            }
                         }
                     </div>
                     <div class="card-footer bg-whitesmoke text-md-right">

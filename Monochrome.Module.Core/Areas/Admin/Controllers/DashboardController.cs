@@ -28,6 +28,8 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
         {
             var allTransactions = _transactionRepo.AsQueryable();
             var loans = _loanRepo.AsQueryable().Where(k => k.Repaid == false);
+            var accounts = _userAccount.AsQueryable()
+                .Include(k => k.User).AsNoTracking().OrderByDescending(n => n.Balance);
 
             var credit = allTransactions.Where(k => k.Type == "credit").Sum(n => n.Amount);
             var debit = allTransactions.Where(k => k.Type == "debit").Sum(n => n.Amount);
@@ -36,7 +38,7 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
             var model = new DashboardViewModel()
             {
                 UnPaidLoans = unpaidLoans,
-                TotalAdmins = 2,
+                TotalMembers = accounts.Count(),
                 Balance = credit - debit - unpaidLoans,
                 TotalLoans = loans.Count(),
             };
@@ -55,8 +57,6 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
             }); ;
             model.TotalOverdue = unpaidLoans;
 
-            var accounts = _userAccount.AsQueryable()
-                .Include(k => k.User).AsNoTracking().OrderBy(n => n.Balance);
 
             model.HighestBalance = accounts.FirstOrDefault()?.Balance;
             model.HighestBalanceUserName = accounts.FirstOrDefault()?.User.UserName;

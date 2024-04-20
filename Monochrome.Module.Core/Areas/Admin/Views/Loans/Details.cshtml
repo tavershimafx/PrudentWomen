@@ -205,13 +205,16 @@
                                         This user joined since @Model.UserAccount.DateCreated.ToString("dd MM yyy") (@(duration.TotalDays < 90 ? $"{Math.Floor(duration.TotalDays)} days" : $"{Math.Floor(duration.TotalDays / 30)} months"))
                                     </p>
                                     <p><div class="badge badge-primary"><i class="fa fa-exclamation-triangle"></i></div> <a class="" data-accountId="@Model.UserAccountId" href="javascript:void(0);">Click to view this user's saving history</a></p>
-                                    @if ((Model.BalanceAtApproval * (30 / 100)) > Model.AmountRequested)
-                                    {
-                                        <p><div class="badge badge-success"><i class="fa fa-check"></i></div>Amount requested is less than 30% of user's balance. Current balance is ₦@((Model.BalanceAtApproval/100).ToString("N2"))</p>
-                                    }
-                                    else
-                                    {
-                                        <p><div class="badge badge-danger"><i class="fa fa-times"></i></div>This user does not have up to 30% of requested loan amount in his account. Current balance is ₦@((Model.BalanceAtApproval / 100).ToString("N2"))</p>
+                                    
+                                    @{
+                                        if (((Model.BalanceAtApproval * 30) / 100) >= Model.AmountRequested)
+                                        {
+                                            <p><div class="badge badge-success"><i class="fa fa-check"></i></div>Amount requested is less than 30% of user's balance. Current balance is ₦@((Model.BalanceAtApproval / 100).ToString("N2"))</p>
+                                        }
+                                        else
+                                        {
+                                            <p><div class="badge badge-danger"><i class="fa fa-times"></i></div>This user does not have up to 30% of requested loan amount in his account. Current balance is ₦@((Model.BalanceAtApproval / 100).ToString("N2"))</p>
+                                        }
                                     }
                                    
                                     <p><div class="badge badge-warning"><i class="fa fa-exclamation-triangle"></i></div> View the documents provided above to verify guarantors for this loan</p>

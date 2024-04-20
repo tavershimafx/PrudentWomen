@@ -1,4 +1,6 @@
-﻿namespace Monochrome.Module.Core.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Monochrome.Module.Core.Models
 {
     public enum ApplicationStatus
     {
@@ -27,6 +29,8 @@
         public DateTimeOffset? DateApproved { get; set; }
         public bool Repaid { get; set; }
         public string Comments { get; set; }
+        [NotMapped]
+        public bool Disbursed => DateDisbursed != null;
         public DateTimeOffset? DateDisbursed { get; set; }
         public string DisbursementAccount { get; set; }
         public string BankNIPCode { get; set; }
@@ -40,11 +44,5 @@
         /// comma seperated list of document urls
         /// </summary>
         public string SupportingDocuments { get; set; }
-    }
-    public class LoanRepaymentHistory : BaseModel
-    {
-        public long LoanId { get; set; }
-        public Loan Loan { get; set; }
-        public decimal Amount { get; set; }
     }
 }

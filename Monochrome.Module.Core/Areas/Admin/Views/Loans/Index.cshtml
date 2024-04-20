@@ -95,14 +95,15 @@
                                                     }
                                                 </td>
                                                 <td>@($"{loan.DateApproved:dd MMM yyyy}")</td>
-                                                <td><div class="badge badge-@(loan.Repaid? "info" : "danger")"><i class="fa fa-@(loan.Repaid ? "check" : "times")"></i></div></td>
                                                 <td><div class="badge badge-@(loan.Disbursed? "success" : "warning")"><i class="fa fa-@(loan.Disbursed ? "check" : "times")"></i></div></td>
+                                                <td><div class="badge badge-@(loan.Repaid? "info" : "danger")"><i class="fa fa-@(loan.Repaid ? "check" : "times")"></i></div></td>
                                                 <td>
                                                     <div class="btn-group">
                                                         <i class="fas fa-ellipsis-v p-10" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
                                                         <div class="dropdown-menu">
                                                             <a class="dropdown-item" href="/admin/loans/details/?id=@loan.Id">View</a>
-                                                            <a class="dropdown-item" href="javascript:void(0)" data-id="@loan.Id">Disburse</a>
+                                                            <a class="dropdown-item" href="/admin/loans/RepayHistory/?id=@loan.Id">View History</a>
+                                                            <a class="dropdown-item" href="javascript:void(0)" data-disburse="@loan.Id">Disburse</a>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -166,6 +167,10 @@
     </section>
 </div>
 
+@section scripts{
+    <script asp-append-version="true" type="text/javascript" src="~/js/pages/transactions.js"></script>
+}
+
 @section modals{
     
     <div class="modal fade" tabindex="-1" role="dialog" id="disburse_modal">
@@ -177,7 +182,7 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <form id="modal-disburse-part">
+                <form id="modal-disburse-part" method="get" action="/admin/loans/disburse">
                     <div class="modal-body">
                         <input type="hidden" name="Id" id="disburse_id" />
                         <div class="form-errors" id="disburse_errors"></div>
@@ -187,7 +192,7 @@
                     </div>
                     <div class="modal-footer bg-whitesmoke br">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary">Disburse</button>
+                        <button type="submit" class="btn btn-danger">Disburse</button>
                     </div>
                 </form>
             </div>

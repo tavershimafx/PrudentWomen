@@ -8,7 +8,7 @@ using Monochrome.Module.Core.Services;
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "Customer")]
+    [Authorize(Roles = "Member")]
     public class UserDashboardController : MvcBaseController
     {
         private readonly IRepository<UserTransaction> _transactionRepo;

@@ -148,6 +148,7 @@ namespace PrudentWomen.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DataType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -183,6 +184,7 @@ namespace PrudentWomen.Migrations
                     Balance = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Currency = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsIdentified = table.Column<bool>(type: "bit", nullable: false),
+                    ManualMap = table.Column<bool>(type: "bit", nullable: false),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -520,6 +522,41 @@ namespace PrudentWomen.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Prudent.LoanRepaymentHistories",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LoanId = table.Column<long>(type: "bigint", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Prudent.LoanRepaymentHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanRepaymentHistories_Mono.Users_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "Mono.Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanRepaymentHistories_Mono.Users_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "Mono.Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Prudent.LoanRepaymentHistories_Prudent.Loans_LoanId",
+                        column: x => x.LoanId,
+                        principalTable: "Prudent.Loans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Mono.RoleClaims_RoleId",
                 table: "Mono.RoleClaims",
@@ -635,6 +672,21 @@ namespace PrudentWomen.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanRepaymentHistories_CreatedById",
+                table: "Prudent.LoanRepaymentHistories",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanRepaymentHistories_LoanId",
+                table: "Prudent.LoanRepaymentHistories",
+                column: "LoanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prudent.LoanRepaymentHistories_UpdatedById",
+                table: "Prudent.LoanRepaymentHistories",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Prudent.Loans_ApproverId",
                 table: "Prudent.Loans",
                 column: "ApproverId");
@@ -687,7 +739,9 @@ namespace PrudentWomen.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Prudent.UserAccounts_UserId",
                 table: "Prudent.UserAccounts",
-                column: "UserId");
+                column: "UserId",
+                unique: true,
+                filter: "[UserId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Prudent.UserTransactions_CreatedById",
@@ -733,6 +787,9 @@ namespace PrudentWomen.Migrations
 
             migrationBuilder.DropTable(
                 name: "Prudent.LoanGuarantors");
+
+            migrationBuilder.DropTable(
+                name: "Prudent.LoanRepaymentHistories");
 
             migrationBuilder.DropTable(
                 name: "Prudent.RegCodes");

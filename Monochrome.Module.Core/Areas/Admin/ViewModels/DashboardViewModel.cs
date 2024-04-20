@@ -10,7 +10,7 @@ namespace Monochrome.Module.Core.Areas.Admin.ViewModels
     }
     public class DashboardViewModel
     {
-        public int TotalAdmins { get; set; }
+        public int TotalMembers { get; set; }
         public int TotalLoans { get; set; }
         public decimal Balance { get; set; }
         public decimal UnPaidLoans { get; set; }

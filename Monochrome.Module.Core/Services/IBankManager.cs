@@ -23,6 +23,8 @@ namespace Monochrome.Module.Core.Services
 
         BankTransaction GetTransaction(long transactionId);
 
+        Task SetOpeningBalance(long accountId, decimal amount);
+
         void CreditSuperAccount(long sourceAccountId, decimal amount, string creditNarration, string debitNarration = "");
 
         void DebitSuperAccount(long destinationAccountId, decimal amount, string creditNarration, string debitNarration = "");

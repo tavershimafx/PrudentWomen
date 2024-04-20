@@ -157,9 +157,10 @@ namespace PrudentWomen
             var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
             var roleManager = serviceProvider.GetRequiredService<RoleManager<Role>>();
 
-            await roleManager.CreateAsync(new Role("Admin"));
             await roleManager.CreateAsync(new Role("SuperAdmin"));
-            await roleManager.CreateAsync(new Role("Customer"));
+            await roleManager.CreateAsync(new Role("Admin"));
+            await roleManager.CreateAsync(new Role("Manager"));
+            await roleManager.CreateAsync(new Role("Member"));
 
             User adminUser = new()
             {
@@ -198,31 +199,37 @@ namespace PrudentWomen
             // account id
             if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.AccountId) == null)
             {
-                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.AccountId, Value = "" });
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.AccountId, DataType = "text", Value = "" });
             }
             
             // tax percent
             if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.PercentInterest) == null)
             {
-                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.PercentInterest, Value = "30" });
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.PercentInterest, DataType = "number", Value = "30" });
             }
 
             // secret key
             if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.SecretKey) == null)
             {
-                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.SecretKey, Value = "" });
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.SecretKey, DataType = "text", Value = "" });
             }
             
             // public key
             if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.PublicKey) == null)
             {
-                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.PublicKey, Value = "" });
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.PublicKey, DataType = "text", Value = "" });
             }
 
             // Loan application fee
             if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.LoanApplicationFee) == null)
             {
-                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.LoanApplicationFee, Value = "1500" });
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.LoanApplicationFee, DataType = "number", Value = "1500" });
+            }
+
+            // Transactions opening date
+            if (appSetting.AsQueryable().FirstOrDefault(k => k.Id == ApplicationConstants.OpeningDate) == null)
+            {
+                appSetting.Insert(new ApplicationSetting() { Id = ApplicationConstants.OpeningDate, DataType = "date", Value = "" });
             }
             appSetting.SaveChanges();
             
@@ -240,8 +247,11 @@ namespace PrudentWomen
                 UserId = userId,
             };
 
-            _userAccount.Insert(account);
-            _userAccount.SaveChanges();
+            if (_userAccount.AsQueryable().FirstOrDefault(k => k.UserId == userId) == null)
+            {
+                _userAccount.Insert(account);
+                _userAccount.SaveChanges();
+            }
         }
 
         private static void RegisterHangFireJobs()

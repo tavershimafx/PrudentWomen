@@ -11,5 +11,7 @@
         Task<DeliveryResponse> SendEmailAsync(EmailMessage message, string[] from, string username = null, string password = null, string userDisplayName = null);
 
         Task SendEmailAsync(string to, string subject, string htmlMessage);
+
+        void SendEmail(string to, string subject, string htmlMessage);
     }
 }

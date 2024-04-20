@@ -4,6 +4,7 @@ using Monochrome.Module.Core.DataAccess;
 using Monochrome.Module.Core.Extensions;
 using Monochrome.Module.Core.Helpers;
 using Monochrome.Module.Core.Models;
+using Monochrome.Module.Core.Services.Email;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -21,11 +22,12 @@ namespace Monochrome.Module.Core.Services
         private readonly IRepository<BankTransaction> _bankTransactionRepo;
         private readonly IRepository<string, ApplicationSetting> _appSetting;
         private readonly IRepository<SyncLog> _syncLogs;
+        private readonly IEmailSender _emailSender;
 
         public BankManager(IHttpClientFactory httpClient, IConfiguration configuration, IRepository<string, User> userRepository,
             IRepository<UserAccount> userAccount, IRepository<UserTransaction> userTransaction,
             IRepository<string, ApplicationSetting> appSetting, IRepository<BankTransaction> bankTransactionRepo,
-            IRepository<SyncLog> syncLogs, IRepository<string, Role> roleRepo)
+            IRepository<SyncLog> syncLogs, IRepository<string, Role> roleRepo, IEmailSender emailSender)
         {
             _httpClientFactory = httpClient;
             _configuration = configuration;
@@ -36,6 +38,7 @@ namespace Monochrome.Module.Core.Services
             _appSetting = appSetting;
             _syncLogs = syncLogs;
             _roleRepo = roleRepo;
+            _emailSender = emailSender;
         }
 
         /// <summary>
@@ -92,7 +95,6 @@ namespace Monochrome.Module.Core.Services
 
             HttpClient httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Add("mono-sec-key", secretKey.Value);
-            //_httpClient.DefaultRequestHeaders.Add("x-realtime", _configuration["MonoApi:RealTime"]);
             var response = await httpClient.GetAsync(url);
             var kk = await response.Content.ReadAsStringAsync();
             await Task.Delay(2000);
@@ -198,26 +200,39 @@ namespace Monochrome.Module.Core.Services
                 var existing = _bankTransactionRepo.AsQueryable().FirstOrDefault(k => k._Id == transaction._Id);
                 if (existing == null)
                 {
-                    Regex regex = new Regex("PWC[\\d+]{5,6}", RegexOptions.IgnoreCase);
-                    var match = regex.Match(transaction.Narration);
-                    if (match.Success)
+                    var opening = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.OpeningDate);
+                    DateTime openingDate = DateTime.MinValue;
+                    bool converted = false;
+                    if (!string.IsNullOrEmpty(opening.Value))
                     {
-                        string username = match.Value;
-                        var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == username);
-                        if (user != null)
-                        {
-                            var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
-                            usrTrans.Add(new UserTransaction()
-                            {
-                                UserAccountId = account.Id,
-                                Amount = transaction.Amount,
-                                Type = transaction.Type,
-                                Date = transaction.Date,
-                                Balance = 0,
-                                Narration = transaction.Narration
-                            });
+                        converted = DateTime.TryParse(opening.Value, out openingDate);
+                    }
 
-                            account.Balance += transaction.Amount;
+                    if (!string.IsNullOrEmpty(opening.Value) && !converted)
+                    {
+                        throw new InvalidOperationException("An invalid transaction date has been set on the" +
+                        " opening date. Please correct this and try again");
+                    }
+
+                    if (!string.IsNullOrEmpty(opening.Value))
+                    {
+                        if (existing.Date >= openingDate)
+                        {
+                            var matched = MatchTransaction(transaction);
+                            if (matched != null)
+                            {
+                                usrTrans.Add(matched);
+                                transaction.IsIdentified = true;
+                                transaction.ManualMap = false;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var matched = MatchTransaction(transaction);
+                        if (matched != null)
+                        {
+                            usrTrans.Add(matched);
                             transaction.IsIdentified = true;
                             transaction.ManualMap = false;
                         }
@@ -244,72 +259,165 @@ namespace Monochrome.Module.Core.Services
             var existing = _bankTransactionRepo.AsQueryable().FirstOrDefault(k => k._Id == transactionId);
             if (existing != null)
             {
-                var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == userName);
-                if (user != null)
+                var opening = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.OpeningDate);
+                DateTime openingDate = DateTime.MinValue;
+                bool converted = false;
+                if (!string.IsNullOrEmpty(opening.Value))
                 {
-                    var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
-                    _userTransaction.Insert(new UserTransaction()
-                    {
-                        UserAccountId = account.Id,
-                        Amount = existing.Amount,
-                        Type = existing.Type,
-                        Date = existing.Date,
-                        Balance = 0,
-                        Narration = existing.Narration
-                    });
-
-                    account.Balance += existing.Amount;
-                    existing.IsIdentified = true;
-                    existing.ManualMap = true;
-
-                    await _bankTransactionRepo.SaveChangesAsync();
-                    return new Result<bool>() { Succeeded = true };
+                    converted = DateTime.TryParse(opening.Value, out openingDate);
                 }
 
-                return new Result<bool>() { Succeeded = false, Error = "Unable to find user!" };
+                if (!string.IsNullOrEmpty(opening.Value) && !converted)
+                {
+                    return new Result<bool>() { Succeeded = false, Error = "An invalid transaction date has been set " +
+                        "on the opening date. Please correct this and try again" };
+                }
+
+                if ((!string.IsNullOrEmpty(opening.Value) && existing.Date >= openingDate) || string.IsNullOrEmpty(opening.Value))
+                {
+                    if (!existing.IsIdentified)
+                    {
+                        var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == userName);
+                        if (user != null)
+                        {
+                            var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
+                            _userTransaction.Insert(new UserTransaction()
+                            {
+                                UserAccountId = account.Id,
+                                Amount = existing.Amount,
+                                Type = existing.Type,
+                                Date = existing.Date,
+                                Balance = 0,
+                                Narration = existing.Narration
+                            });
+
+                            if (existing.Type == "credit")
+                            {
+                                account.Balance += existing.Amount;
+                            }
+                            else if (existing.Type == "debit")
+                            {
+                                account.Balance -= existing.Amount;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot identify the type of transaction to be performed");
+                            }
+
+                            existing.IsIdentified = true;
+                            existing.ManualMap = true;
+
+                            await _bankTransactionRepo.SaveChangesAsync();
+                            return new Result<bool>() { Succeeded = true };
+                        }
+
+                        return new Result<bool>() { Succeeded = false, Error = "Unable to find user!" };
+                    }
+
+                    return new Result<bool>() { Succeeded = false, Error = "This transaction has already been mapped!" };
+                }
+
+                return new Result<bool>() { Succeeded = false, Error = "The transaction you attempted mapping " +
+                    "was performed before the opening date set by the administrator. Please verify this and try again." };
+               
             }
 
-            return new Result<bool>() { Succeeded = false, Error = "Transaction does not exist!" };
+            return new Result<bool>() { Succeeded = false, Error = "Transaction does not exist." };
         }
 
         public async Task<Result<bool>> BulkIdentify(string transactionId, IEnumerable<BulkEntryItem> bulkUsers)
         {
             var existing = _bankTransactionRepo.AsQueryable().FirstOrDefault(k => k._Id == transactionId);
-            if (existing != null)
+            if (existing != null && bulkUsers.Any())
             {
-                var validateResponse = ValidateUsers(bulkUsers.Select(k => k.Username));
-                if (validateResponse.Succeeded)
+                var opening = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.OpeningDate);
+                DateTime openingDate = DateTime.MinValue;
+                bool converted = false;
+                if (!string.IsNullOrEmpty(opening.Value))
                 {
-                    List<UserAccount> transactingAccounts = new();
-                    foreach (var bulkItem in bulkUsers)
-                    {
-                        var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == bulkItem.Username);
-                        var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
-                        _userTransaction.Insert(new UserTransaction()
-                        {
-                            UserAccountId = account.Id,
-                            Amount = existing.Amount,
-                            Type = existing.Type,
-                            Date = existing.Date,
-                            Balance = 0,
-                            Narration = existing.Narration
-                        });
+                    converted = DateTime.TryParse(opening.Value, out openingDate);
+                }
 
-                        account.Balance += bulkItem.Amount;
-                        transactingAccounts.Add(account);
+                if (!string.IsNullOrEmpty(opening.Value) && !converted)
+                {
+                    return new Result<bool>()
+                    {
+                        Succeeded = false,
+                        Error = "An invalid transaction date has been set " +
+                        "on the opening date. Please correct this and try again"
+                    };
+                }
+
+                if ((!string.IsNullOrEmpty(opening.Value) && existing.Date >= openingDate) || string.IsNullOrEmpty(opening.Value))
+                {
+                    if (!existing.IsIdentified)
+                    {
+                        if (bulkUsers.Sum(k => k.Amount) * 100 != existing.Amount)
+                        {
+                            return new Result<bool>()
+                            {
+                                Succeeded = false,
+                                Error = "Cannot perform the operation because the total " +
+                                "amount inputed is not equal to the amount recorded by the transaction."
+                            };
+                        }
+
+                        var validateResponse = ValidateUsers(bulkUsers.Select(k => k.Username));
+                        if (validateResponse.Succeeded)
+                        {
+                            List<UserAccount> transactingAccounts = new();
+                            foreach (var bulkItem in bulkUsers)
+                            {
+                                var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == bulkItem.Username);
+                                var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
+                                _userTransaction.Insert(new UserTransaction()
+                                {
+                                    UserAccountId = account.Id,
+                                    Amount = bulkItem.Amount * 100,
+                                    Type = existing.Type,
+                                    Date = existing.Date,
+                                    Balance = 0,
+                                    Narration = existing.Narration
+                                });
+
+                                if (existing.Type == "credit")
+                                {
+                                    account.Balance += bulkItem.Amount * 100;
+                                }
+                                else if (existing.Type == "debit")
+                                {
+                                    account.Balance -= bulkItem.Amount * 100;
+                                }
+                                else
+                                {
+                                    throw new InvalidOperationException("Cannot identify the type of transaction to be performed");
+                                }
+
+                                transactingAccounts.Add(account);
+                            }
+
+                            existing.IsIdentified = true;
+                            existing.ManualMap = true;
+
+                            await _bankTransactionRepo.SaveChangesAsync();
+                            return new Result<bool>() { Succeeded = true };
+                        }
+
+                        return new Result<bool>() { Succeeded = false, Error = validateResponse.Error };
                     }
 
-                    existing.IsIdentified = true;
-                    existing.ManualMap = true;
-
-                    await _bankTransactionRepo.SaveChangesAsync();
-                    return new Result<bool>() { Succeeded = true };
+                    return new Result<bool>() { Succeeded = false, Error = "This transaction has already been mapped!" };
                 }
-                
-                return new Result<bool>() { Succeeded = false, Error = validateResponse.Error };
+
+                return new Result<bool>()
+                {
+                    Succeeded = false,
+                    Error = "The transaction you attempted mapping " +
+                    "was performed before the opening date set by the administrator. Please verify this and try again."
+                };
             }
 
-            return new Result<bool>() { Succeeded = false, Error = "Transaction does not exist!" };
+            return new Result<bool>() { Succeeded = false, Error = "Transaction does not exist or no users selected" };
         }
 
         public BankTransaction GetTransaction(long transactionId)
@@ -320,6 +428,50 @@ namespace Monochrome.Module.Core.Services
         public UserAccount GetAccount(string userId)
         {
             return _userAccount.AsQueryable().FirstOrDefault(k => k.UserId == userId);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="accountId"></param>
+        /// <param name="amount">Amount in naira</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task SetOpeningBalance(long accountId, decimal amount)
+        {
+            UserAccount account = _userAccount.AsQueryable().FirstOrDefault(b => b.Id == accountId) ?? throw new InvalidOperationException($"Invalid account id: {accountId}");
+            var opening = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.OpeningDate);
+            DateTime openingDate = DateTime.MinValue;
+            bool converted = false;
+            if (!string.IsNullOrEmpty(opening.Value))
+            {
+                converted = DateTime.TryParse(opening.Value, out openingDate);
+            }
+
+            if (!converted || openingDate == DateTime.MinValue)
+            {
+                throw new InvalidOperationException("No date or an invalid transaction date has been set on the" +
+                " opening date. Please correct this and try again");
+            }
+
+            await _userTransaction.AsQueryable().Where(p => p.Date < openingDate).ForEachAsync(x => x.Type = "invalid");
+            _userTransaction.SaveChanges();
+
+            var validTransactions = _userTransaction.AsQueryable().Where(g => g.Date >= openingDate).ToList(); ;
+            var debits = validTransactions.Where(n => n.Type == "debit").Sum(n => n.Amount);
+            var credits = validTransactions.Where(n => n.Type == "credit").Sum(n => n.Amount);
+            account.Balance = (amount * 100) + (credits - debits); // amount converted to kobo before operation
+
+            _userTransaction.Insert(new UserTransaction()
+            {
+                UserAccountId = account.Id,
+                Amount = amount * 100,
+                Type = "credit",
+                Date = openingDate.Subtract(TimeSpan.FromDays(1)),
+                Balance = 0,
+                Narration = "Account Opening Balance"
+            });
+            _userAccount.SaveChanges();
         }
 
         /// <summary>
@@ -335,7 +487,7 @@ namespace Monochrome.Module.Core.Services
                 .FirstOrDefault(k => k.UserRoles.Any(p => p.RoleId == superRole.Id));
             var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
 
-            var sourceAccount = _userAccount.AsQueryable().FirstOrDefault(n => n.Id == sourceAccountId);
+            var sourceAccount = _userAccount.AsQueryable().Include(p => p.User).FirstOrDefault(n => n.Id == sourceAccountId);
             var sourceTransaction = new UserTransaction()
             {
                 Amount = amount,
@@ -361,6 +513,11 @@ namespace Monochrome.Module.Core.Services
             _userTransaction.SaveChanges();
 
             // send email to user
+            _emailSender.SendEmail(sourceAccount.User.Email, "Account Debit", $"An transaction just occured on your Prudent Women " +
+                $"Coperative account. \nAmount: ₦{(amount / 100):N2}\nNarration: {sourceTransaction.Narration}");
+
+            _emailSender.SendEmail(user.Email, "Account Credit", $"An transaction just occured on your Prudent Women " +
+                $"Coperative account. \nAmount: ₦{(amount / 100):N2}\nNarration: {userTransaction.Narration}");
         }
 
         /// <summary>
@@ -386,7 +543,7 @@ namespace Monochrome.Module.Core.Services
             };
             account.Balance -= amount;
 
-            var destinationAccount = _userAccount.AsQueryable().FirstOrDefault(n => n.Id == destinationAccountId);
+            var destinationAccount = _userAccount.AsQueryable().Include(p => p.User).FirstOrDefault(n => n.Id == destinationAccountId);
             var destinationTransaction = new UserTransaction()
             {
                 Amount = amount,
@@ -402,6 +559,12 @@ namespace Monochrome.Module.Core.Services
             _userTransaction.SaveChanges();
 
             // send email to user
+            // send email to user
+            _emailSender.SendEmail(user.Email, "Account Debit", $"An transaction just occured on your Prudent Women " +
+                $"Coperative account. \nAmount: ₦{(amount / 100):N2}\nNarration: {userTransaction.Narration}");
+
+            _emailSender.SendEmail(destinationAccount.User.Email, "Account Credit", $"An transaction just occured on your Prudent Women " +
+                $"Coperative account. \nAmount: ₦{(amount / 100):N2}\nNarration: {destinationTransaction.Narration}");
         }
 
         /// <summary>
@@ -410,8 +573,8 @@ namespace Monochrome.Module.Core.Services
         /// <param name="amount">Amount in kobo</param>
         public void ExecuteTransaction(long sourceAccountId, long destinationId, decimal amount, string creditNarration, string debitNarration = "")
         {
-            var sourceAccount = _userAccount.AsQueryable().FirstOrDefault(n => n.Id == sourceAccountId);
-            var destinationAccount = _userAccount.AsQueryable().FirstOrDefault(n => n.Id == destinationId);
+            var sourceAccount = _userAccount.AsQueryable().Include(a => a.User).FirstOrDefault(n => n.Id == sourceAccountId);
+            var destinationAccount = _userAccount.AsQueryable().Include(a => a.User).FirstOrDefault(n => n.Id == destinationId);
             
             var sourceTransaction = new UserTransaction()
             {
@@ -438,6 +601,40 @@ namespace Monochrome.Module.Core.Services
             _userTransaction.SaveChanges();
 
             // send email to user
+            _emailSender.SendEmail(sourceAccount.User.Email, "Account Debit", $"An transaction just occured on your Prudent Women " +
+                $"Coperative account. \nAmount: ₦{(amount / 100):N2}\nNarration: {sourceTransaction.Narration}");
+
+            _emailSender.SendEmail(destinationAccount.User.Email, "Account Credit", $"An transaction just occured on your Prudent Women " +
+                $"Coperative account. \nAmount: ₦{(amount / 100):N2}\nNarration: {destinationTransaction.Narration}");
+        }
+
+        private UserTransaction MatchTransaction(BankTransaction transaction)
+        {
+            Regex regex = new Regex("PWC[\\d+]{5,6}", RegexOptions.IgnoreCase);
+            var match = regex.Match(transaction.Narration);
+            if (match.Success)
+            {
+                string username = match.Value;
+                var user = _userRepository.AsQueryable().FirstOrDefault(k => k.UserName == username);
+                if (user != null)
+                {
+                    var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
+                    var usrTrans = new UserTransaction()
+                    {
+                        UserAccountId = account.Id,
+                        Amount = transaction.Amount,
+                        Type = transaction.Type,
+                        Date = transaction.Date,
+                        Balance = 0,
+                        Narration = transaction.Narration
+                    };
+
+                    account.Balance += transaction.Amount;
+                    return usrTrans;
+                }
+            }
+
+            return null;
         }
 
         private async Task<Result<IEnumerable<BankTransaction>>> FetchTransactions(DateTime start, DateTime end)

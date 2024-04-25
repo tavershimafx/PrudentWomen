@@ -25,10 +25,20 @@
                             if (item.Id == Monochrome.Module.Core.Services.ApplicationConstants.OpeningDate)
                             {
                                 var converted = DateTime.TryParse(item.Value, out var openDate);
-                                <div class="form-group">
-                                    <label>@item.Id</label>
-                                    <input type="date" disabled="@(!string.IsNullOrEmpty(item.Value))" name="@item.Id" value="@(converted? openDate.ToShortDateString() : item.Value)" class="form-control">
-                                </div>
+                                if(converted)
+                                {
+                                    <div class="form-group">
+                                        <label>@item.Id</label>
+                                        <input type="text" disabled name="@item.Id" value="@(openDate.ToString("dd MMM yyyy"))" class="form-control">
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="form-group">
+                                        <label>@item.Id</label>
+                                        <input type="date" name="@item.Id" class="form-control">
+                                    </div>
+                                }
                             }
                             else
                             {
@@ -51,7 +61,7 @@
                <div class="card-body">
                     <button class="btn btn-primary" type="button" id="configure-mono">Configure Account</button>
                     <button class="btn btn-secondary" type="button" id="disconnect">Disconnect Account</button>
-                    <a class="btn btn-primary" href="/admin/appsetting/SynchronizeTransactions">Synchronize</a>
+                    <button class="btn btn-primary" id="sync_btn">Synchronize</button>
                </div>
             </div>
         </div>
@@ -84,6 +94,9 @@
         $("#disconnect").on('click', (e)=>{
             $("#disconnect_modal").modal("show")
         })
+        $("#sync_btn").on('click', (e)=>{
+            $("#sync_modal").modal("show")
+        })
     </script>
 
 }
@@ -114,4 +127,36 @@
         </div>
     </div>
 
+    <div class="modal fade" tabindex="-1" role="dialog" id="sync_modal">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Synchronize Account</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="get" action="/admin/appsetting/SynchronizeTransactions">
+                    <div class="modal-body">
+                    
+                            <p>Select duration</p>
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" name="start" class="form-control">
+                            </div>
+
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" name="end" class="form-control">
+                            </div>
+
+                    </div>
+                    <div class="modal-footer bg-whitesmoke br">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button href="/admin/appsetting/DisconnectAccount" class="btn btn-primary" type="submit">Synchronize</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 }

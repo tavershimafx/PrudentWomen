@@ -40,10 +40,10 @@
                 </div>
                 <div class="card-body p-0">
 
-                    <button class="btn btn-primary" type="button" data-manu="_bulk">Add Users</button>
                     <div class="table-responsive table-invoice">
                         <table class="table table-striped">
                             <tr>
+                                <th>S/N</th>
                                 <th>Id</th>
                                 <th>Amount</th>
                                 <th>Type</th>
@@ -51,27 +51,32 @@
                                 <th>Identified</th>
                                 <th>Action</th>
                             </tr>
-                            @foreach (var item in Model.Data)
-                            {
-                                <tr>
-                                    <td data-id="@item._Id" title="@item.Narration">@item._Id</td>
-                                    <td title="@item.Narration">₦@((item.Amount / 100).ToString("N2"))</td>
-                                    <td><div class="badge badge-@(item.Type == "credit"? "success" : "danger")">@item.Type</div></td>
-                                    <td>@item.Date.ToString("dd MMM yyyy")</td>
-                                    <td>
-                                        <div class="badge badge-@(item.IsIdentified? "success" : "danger")"><i class="fa fa-@(item.IsIdentified? "check" : "times")"></i></div>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <i class="fas fa-ellipsis-v" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
-                                            <div class="dropdown-menu">
-                                                <a class="dropdown-item" href="javascript:void(0)" data-identify="@item._Id">Identify</a>
-                                                <a class="dropdown-item" href="javascript:void(0)" data-amount="@(item.Amount / 100)" data-bulk="@item._Id">Bulk Identify</a>
-                                                <a class="dropdown-item" href="javascript:void(0)" data-loan="@item.Id">Loan Repayment</a>
+                            @{
+                                int x = 0;
+                                foreach (var item in Model.Data)
+                                {
+                                    x++;
+                                    <tr>
+                                        <td>@x</td>
+                                        <td data-id="@item._Id" title="@item.Narration">@item._Id</td>
+                                        <td title="@item.Narration">₦@((item.Amount / 100).ToString("N2"))</td>
+                                        <td><div class="badge badge-@(item.Type == "credit"? "success" : "danger")">@item.Type</div></td>
+                                        <td>@item.Date.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <div class="badge badge-@(item.IsIdentified? "success" : "danger")"><i class="fa fa-@(item.IsIdentified? "check" : "times")"></i></div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <i class="fas fa-ellipsis-v" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+                                                <div class="dropdown-menu">
+                                                    <a class="dropdown-item" href="javascript:void(0)" data-identify="@item._Id">Identify</a>
+                                                    <a class="dropdown-item" href="javascript:void(0)" data-amount="@(item.Amount / 100)" data-bulk="@item._Id">Bulk Identify</a>
+                                                    <a class="dropdown-item" href="javascript:void(0)" data-loan="@item.Id">Loan Repayment</a>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
+                                }
                             }
                         </table>
                     </div>

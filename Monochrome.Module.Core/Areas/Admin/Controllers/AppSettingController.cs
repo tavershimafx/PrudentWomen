@@ -58,7 +58,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> SynchronizeTransactions(DateTime start, DateTime end, bool fromPrev = true)
+        public async Task<IActionResult> SynchronizeTransactions(DateTime start, DateTime end, bool fromPrev = false)
         {
             BackgroundJob.Enqueue<IBankManager>(p => p.SynchronizeWithMono(start, end, fromPrev));
            

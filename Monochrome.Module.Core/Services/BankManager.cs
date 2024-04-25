@@ -44,7 +44,7 @@ namespace Monochrome.Module.Core.Services
         /// <summary>
         /// Performs a fetch operation from mono of the transactions fetched from the connected bank
         /// </summary>
-        public async Task SynchronizeWithMono(DateTime start, DateTime end, bool fromPrev = true)
+        public async Task SynchronizeWithMono(DateTime start, DateTime end, bool fromPrev = false)
         {
             await SynchronizeWithBank();
             start = start == default ? DateTime.Now.Subtract(TimeSpan.FromDays(30)) : start;
@@ -79,25 +79,6 @@ namespace Monochrome.Module.Core.Services
                 log.Message = result.Error;
                 _syncLogs.SaveChanges();
             }
-        }
-
-        /// <summary>
-        /// Calls the mono sync endpoint to synchronize data from the connected bank into mono
-        /// </summary>
-        private async Task SynchronizeWithBank()
-        {
-            var accountSetting = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.AccountId) ?? throw new NullReferenceException("Mono account has not been configured.");
-            var secretKey = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.SecretKey) ?? throw new NullReferenceException("Mono account Secret Key has not been configured.");
-
-            string url = $"{_configuration["MonoApi:BaseUrl"]}/v1/accounts/{accountSetting.Value}{_configuration["MonoApi:ManualSync"]}";
-            string filters = $"?allow_incomplete_statement=false";
-            url = $"{url}/{filters}";
-
-            HttpClient httpClient = _httpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.Add("mono-sec-key", secretKey.Value);
-            var response = await httpClient.GetAsync(url);
-            var kk = await response.Content.ReadAsStringAsync();
-            await Task.Delay(2000);
         }
 
         public async Task<bool> AuthenticateToken(string token)
@@ -216,7 +197,7 @@ namespace Monochrome.Module.Core.Services
 
                     if (!string.IsNullOrEmpty(opening.Value))
                     {
-                        if (existing.Date >= openingDate)
+                        if (transaction.Date >= openingDate)
                         {
                             var matched = MatchTransaction(transaction);
                             if (matched != null)
@@ -454,7 +435,7 @@ namespace Monochrome.Module.Core.Services
                 " opening date. Please correct this and try again");
             }
 
-            await _userTransaction.AsQueryable().Where(p => p.Date < openingDate).ForEachAsync(x => x.Type = "invalid");
+            await _userTransaction.AsQueryable().Where(p => p.Date < openingDate && p.UserAccountId == account.Id).ForEachAsync(x => x.Type = "invalid");
             _userTransaction.SaveChanges();
 
             var validTransactions = _userTransaction.AsQueryable().Where(g => g.Date >= openingDate).ToList(); ;
@@ -637,12 +618,31 @@ namespace Monochrome.Module.Core.Services
             return null;
         }
 
+        /// <summary>
+        /// Calls the mono sync endpoint to synchronize data from the connected bank into mono
+        /// </summary>
+        private async Task SynchronizeWithBank()
+        {
+            var accountSetting = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.AccountId) ?? throw new NullReferenceException("Mono account has not been configured.");
+            var secretKey = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.SecretKey) ?? throw new NullReferenceException("Mono account Secret Key has not been configured.");
+
+            string url = $"{_configuration["MonoApi:BaseUrl"]}/accounts/{accountSetting.Value}{_configuration["MonoApi:ManualSync"]}";
+            string filters = $"?allow_incomplete_statement=false";
+            url = $"{url}/{filters}";
+
+            HttpClient httpClient = _httpClientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.Add("mono-sec-key", secretKey.Value);
+            var response = await httpClient.PostAsync(url, (new string[] { }).SerializeObject());
+            var kk = await response.Content.ReadAsStringAsync();
+            await Task.Delay(2000);
+        }
+
         private async Task<Result<IEnumerable<BankTransaction>>> FetchTransactions(DateTime start, DateTime end)
         {
             var accountSetting = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.AccountId) ?? throw new NullReferenceException("Mono account has not been configured.");
             var secretKey = _appSetting.AsQueryable().FirstOrDefault(n => n.Id == ApplicationConstants.SecretKey) ?? throw new NullReferenceException("Mono account Secret Key has not been configured.");
             
-            string url = $"{_configuration["MonoApi:BaseUrl"]}/v1/accounts/{accountSetting.Value}{_configuration["MonoApi:Transactions"]}";
+            string url = $"{_configuration["MonoApi:BaseUrl"]}/v2/accounts/{accountSetting.Value}{_configuration["MonoApi:Transactions"]}";
             string filters = $"?paginate=false&start={start:dd-MM-yyyy}&end={end:dd-MM-yyyy}";
             url = $"{url}/{filters}";
 
@@ -657,11 +657,18 @@ namespace Monochrome.Module.Core.Services
 
             if (response.IsSuccessStatusCode)
             {
-                var tranResponse = JsonConvert.DeserializeObject<ApiResponse<ResponseData>>(data, jsonSettings);
+                var tranResponse = JsonConvert.DeserializeObject<ApiResponse<IEnumerable<ResponseData>>>(data, jsonSettings);
                 return new Result<IEnumerable<BankTransaction>>()
                 {
                     Succeeded = true,
-                    Data = tranResponse.Data.Transactions
+                    Data = tranResponse.Data.Select(x => new BankTransaction
+                    {
+                        Amount = x.Amount,
+                        Date = x.Date,
+                        Narration = x.Narration,
+                        Type = x.Type,
+                        _Id = x.Id
+                    })
                 };
             }
 

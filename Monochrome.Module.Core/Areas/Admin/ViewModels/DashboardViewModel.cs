@@ -21,7 +21,8 @@ namespace Monochrome.Module.Core.Areas.Admin.ViewModels
         public decimal TotalOverdue { get; set; }
         public DateTimeOffset FromOneYearDate { get; set; }
         public DateTimeOffset MaximumDate { get; set; }
-        public IEnumerable<object[]> Data { get; set; }
+        public IEnumerable<object[]> Debit { get; set; }
+        public IEnumerable<object[]> Credit { get; set; }
         public IEnumerable<LoanList> PendingLoans { get; set; }
     }
 }

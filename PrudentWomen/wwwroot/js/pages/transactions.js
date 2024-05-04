@@ -15,6 +15,7 @@ $('[data-identify]').click(function (e) {
     var me = $(this)
     let tran_d = me.data("identify")
     $("#TransactionId").val(tran_d)
+    $("#iden_errors").empty()
     $("#single_identify_modal").modal("show")
 
     $("#submit_trans").click(function (e) {
@@ -202,6 +203,31 @@ $('[data-disburse]').click(function (e) {
 
     $("#disburse_id").val(id)
     $("#disburse_modal").modal("show")
+    $("#disburse_errors").empty()
+    $("#index_disburse").click(function (e) {
+        e.preventDefault()
+        //var me = $(this)
+        //let id = me.data("id")
+
+        $(".page-loader-wrapper").toggle()
+        $.ajax({
+            method: "GET",
+            url: `/admin/Loans/disburse/?id=${id}`,
+            processData: false,
+            async: false,
+            success: function (xhr) {
+                location.reload();
+            },
+            error: function (xhr) {
+                $(".page-loader-wrapper").hide()
+                var errors = getErrors(xhr.responseJSON)
+                $("#disburse_errors").empty()
+                for (var i = 0; i < errors.length; i++) {
+                    $("#disburse_errors").append(`<span>${errors[i]}</span><br />`)
+                }
+            }
+        })
+    })
 })
 
 $("#DisbursementAccount").change(function (e) {
@@ -243,6 +269,15 @@ $('[data-loan]').click(function (e) {
     $("#loan_modal").modal("show")
 })
 
+$('#reject_loan').click(function (e) {
+    e.preventDefault()
+    var me = $(this)
+    let id = me.data("id")
+
+    $("#ln_id").val(id)
+    $("#reject_modal").modal("show")
+})
+
 function getUnpaidLoans(transactionId) {
     $.ajax({
         method: "GET",
@@ -251,6 +286,18 @@ function getUnpaidLoans(transactionId) {
         async: false,
         success: function (xhr) {
             $('#loan_modal .modal-body table').html("")
+            $('#loan_modal .modal-body table').html(`<tr>
+                                <th>#</th>
+                                <th>User</th>
+                                <th>Amount Requested</th>
+                                <th>Date Applied</th>
+                                <th>Tenure</th>
+                                <th>Status</th>
+                                <th>Date Approved</th>
+                                <th>Disbursed</th>
+                                <th>Repaid</th>
+                                <th>Action</th>
+                            </tr>`)
             xhr.forEach((item, index) => {
                 let row = `<tr>
                                 <td>${index + 1}</td>

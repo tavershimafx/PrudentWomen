@@ -438,7 +438,7 @@ namespace Monochrome.Module.Core.Services
             await _userTransaction.AsQueryable().Where(p => p.Date < openingDate && p.UserAccountId == account.Id).ForEachAsync(x => x.Type = "invalid");
             _userTransaction.SaveChanges();
 
-            var validTransactions = _userTransaction.AsQueryable().Where(g => g.Date >= openingDate).ToList(); ;
+            var validTransactions = _userTransaction.AsQueryable().Where(g => g.Date >= openingDate && g.UserAccountId == account.Id).ToList(); ;
             var debits = validTransactions.Where(n => n.Type == "debit").Sum(n => n.Amount);
             var credits = validTransactions.Where(n => n.Type == "credit").Sum(n => n.Amount);
             account.Balance = (amount * 100) + (credits - debits); // amount converted to kobo before operation

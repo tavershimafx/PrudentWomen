@@ -87,7 +87,7 @@
                     <div class="card-header">
                         <h4>Transactions</h4>
                         <div class="card-header-action">
-                            @if (totalDays >= 30)
+                            @if (totalDays > 1 || totalDays >= 30)
                             {
                                 <button class="btn btn-sm btn-outline-secondary mr-1" id="one_month">1M</button>
                             }
@@ -131,7 +131,7 @@
                                     <th>Action</th>
                                 </tr>
                                 @{
-                                    if (!Model.Data.Any())
+                                    if (!Model.PendingLoans.Any())
                                     {
                                         <tr>
                                             <td colspan="6" class="text-center">No PendingLoans</td>
@@ -237,15 +237,20 @@
                         show: false,
                     },
                 },
-                colors: ['#5a5278'],
+                colors: ['#5a5278', '#fe4524'],
                 dataLabels: {
                     enabled: false
                 },
                 
-                series: [{
-                    data: @JsonConvert.SerializeObject(Model.Data)
-                },
-
+                series: [
+                    { 
+                        name: "Credit",
+                        data: @JsonConvert.SerializeObject(Model.Credit) 
+                    },
+                    { 
+                        name: "Debit",
+                        data: @JsonConvert.SerializeObject(Model.Debit) 
+                    }
                 ],
                 markers: {
                     size: 0,

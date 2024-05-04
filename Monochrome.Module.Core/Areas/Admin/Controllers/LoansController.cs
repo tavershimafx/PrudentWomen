@@ -187,21 +187,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
 
             if (loan != null)
             {
-                loan.BalanceAtApproval = _userAccount.AsQueryable().FirstOrDefault(k => k.Id == loan.UserAccountId).Balance;
-
-                var details = LoanApprovalDetails.FromLoan(loan);
-
-                AccountLookupObject lookup = new()
-                {
-                    account_number = loan.DisbursementAccount,
-                    nip_code = loan.BankNIPCode
-                };
-
-                var result = await _bankManager.AccountLookup(lookup);
-                details.DisbursementAccountName = result.Succeeded? result.Data.Name : result.Error;
-
-                details.OutstandingLoans = _loanRepo.AsQueryable().Where(k => k.UserAccountId == loan.UserAccountId && k.Status == ApplicationStatus.Approved && k.Repaid == false);
-                return View(details);
+                return View(await GetLoanDetails(loan));
             }
 
             ModelState.AddModelError("Errors", "Loan request not found");
@@ -209,7 +195,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         }
 
         [HttpPost]
-        public IActionResult Details(LoanApprovalForm model)
+        public async Task<IActionResult> Details(LoanApprovalForm model)
         {
             if (ModelState.IsValid)
             {
@@ -220,7 +206,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                              .FirstOrDefault(k => k.Id == model.Id);
 
                     ModelState.AddModelError("Errors", "Amount to grant cannot be 0");
-                    return View(lns);
+                    return View(await GetLoanDetails(lns));
                 }
 
                 var result = _loanManager.Approve(model, User.Identity.Name);
@@ -240,12 +226,32 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
                 .Include(j => j.UserAccount.User)
                 .FirstOrDefault(k => k.Id == model.Id);
 
-            return View(loan);
+            return View(await GetLoanDetails(loan));
+        }
+
+        private async Task<LoanApprovalDetails> GetLoanDetails(Loan loan)
+        {
+            loan.BalanceAtApproval = _userAccount.AsQueryable().FirstOrDefault(k => k.Id == loan.UserAccountId).Balance;
+
+            var details = LoanApprovalDetails.FromLoan(loan);
+
+            AccountLookupObject lookup = new()
+            {
+                account_number = loan.DisbursementAccount,
+                nip_code = loan.BankNIPCode
+            };
+
+            var result = await _bankManager.AccountLookup(lookup);
+            details.DisbursementAccountName = result.Succeeded ? result.Data.Name : result.Error;
+
+            details.OutstandingLoans = _loanRepo.AsQueryable().Where(k => k.UserAccountId == loan.UserAccountId && k.Status == ApplicationStatus.Approved && k.Repaid == false);
+            return details;
         }
 
         public IActionResult Reject(long id, string comment)
         {
-            return Ok();
+            _loanManager.Reject(id, comment, User.Identity.Name);
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> Disburse(long id)
@@ -281,6 +287,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
         public IActionResult RepayHistory(long id, int page = 1, int size = 50)
         {
             var loans = _repayHistory.AsQueryable()
+                .Include(n => n.Loan)
                 .Where(n => n.LoanId == id)
                 .OrderByDescending(k => k.DateCreated);
 
@@ -295,6 +302,11 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             model.TotalPages = (int)Math.Ceiling((double)model.TotalItems / size);
             model.Page = page;
 
+            if (loans != null && loans.Any())
+            {
+                ViewData["AmountGranted"] = loans.First().Loan.AmountGranted;
+                ViewData["PecentInterest"] = loans.First().Loan.PecentInterest;
+            }
             return View(model);
         }
 

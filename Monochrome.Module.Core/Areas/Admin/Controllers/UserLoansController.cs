@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Monochrome.Module.Core.Services;
 using Monochrome.Module.Core.Areas.Admin.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace Monochrome.Module.Core.Areas.Core.Controllers
 {
@@ -176,6 +177,7 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             var user = _userRepo.AsQueryable().FirstOrDefault(n => n.UserName == User.Identity.Name);
             var account = _userAccount.AsQueryable().FirstOrDefault(n => n.UserId == user.Id);
             var loans = _repayHistory.AsQueryable()
+                .Include(p => p.Loan)
                 .Where(n => n.LoanId == id && n.Loan.UserAccountId == account.Id)
                 .OrderByDescending(k => k.DateCreated);
 
@@ -189,7 +191,13 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             model.PageSize = size;
             model.TotalPages = (int)Math.Ceiling((double)model.TotalItems / size);
             model.Page = page;
-           
+
+            if (loans != null && loans.Any())
+            {
+                ViewData["AmountGranted"] = loans.First().Loan.AmountGranted;
+                ViewData["PecentInterest"] = loans.First().Loan.PecentInterest;
+            }
+
             return View(model);
         }
     }

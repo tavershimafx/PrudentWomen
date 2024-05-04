@@ -102,7 +102,21 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
                             protocol: Request.Scheme);
 
                     await _emailSender.SendEmailAsync(model.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    $"<!doctype html>" +
+                    $"<html lang='en'><head> <meta charset='utf-8'>" +
+                    $"<title>Prudent Women Organisation</title>" +
+                    $"<base href='/'>" +
+                    $"<meta name='viewport' content='width=device-width, initial-scale=1'>" +
+                    $"<link rel='icon' type='image/x-icon' href=''>" +
+                    $"</head><body>" +
+                    $"<h1>Please Confirm Your Email Address on Prudent Women Portal</h1>" +
+                    $"<p>You have just changed your email address on your Prudent Women Account. " +
+                    $"By <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>, you are confirming this change.</p>" +
+                    $"<p>Ignore this message if you did not initiate this change, or if this message was sent to you in error.</p>" +
+                    $"<p>You can report any suspicious activity on your account by visiting our " +
+                    $"website <a href='www.prudentwomen.org'>www.prudentwomen.org</a> and contacting the customer care officers, " +
+                    $"or call us directly via our Help Desk Line: +234 703 602 5402</p>" +
+                    $"</body></html>");
 
                     var newRoles = _roleRepository.AsQueryable().QueryInChunksOf(10)
                         .Where(n => model.RoleIds.Any(k => k == n.Id));

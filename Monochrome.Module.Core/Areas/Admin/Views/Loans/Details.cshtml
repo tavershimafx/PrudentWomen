@@ -7,6 +7,7 @@
 @{
     ViewData["Title"] = "Loan Approval |";
     var guarantors = _guarantorRepo.AsQueryable().Include(k => k.User).Where(n => n.LoanId == Model.Id);
+    
 }
 
 <!-- Start app main Content -->
@@ -128,9 +129,14 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Click to view supporting document</label>
-                                        @foreach (var item in Model.SupportingDocuments.Split(","))
-                                        {
-                                            <a target="_blank" href="@item">@System.IO.Path.GetFileName(item)</a>
+                                        @{
+                                            if (Model.SupportingDocuments != null)
+                                            {
+                                                foreach (var item in Model.SupportingDocuments.Split(","))
+                                                {
+                                                    <a target="_blank" href="@item">@System.IO.Path.GetFileName(item)</a>
+                                                }
+                                            }
                                         }
                                     </div>
                                 </div>
@@ -204,8 +210,8 @@
                                         }
                                         This user joined since @Model.UserAccount.DateCreated.ToString("dd MM yyy") (@(duration.TotalDays < 90 ? $"{Math.Floor(duration.TotalDays)} days" : $"{Math.Floor(duration.TotalDays / 30)} months"))
                                     </p>
-                                    <p><div class="badge badge-primary"><i class="fa fa-exclamation-triangle"></i></div> <a class="" data-accountId="@Model.UserAccountId" href="javascript:void(0);">Click to view this user's saving history</a></p>
-                                    
+                                    @*<p><div class="badge badge-primary"><i class="fa fa-exclamation-triangle"></i></div> <a class="" data-accountId="@Model.UserAccountId" href="javascript:void(0);">Click to view this user's saving history</a></p>
+                                    *@
                                     @{
                                         if (((Model.BalanceAtApproval * 30) / 100) >= Model.AmountRequested)
                                         {
@@ -234,7 +240,7 @@
                         <div class="card-footer bg-whitesmoke text-md-right">
                             <button class="btn btn-primary" type="submit" disabled="@(Model.Status == ApplicationStatus.Approved)">Approve</button>
                             <button class="btn btn-primary" id="disburse_btn" data-id="@Model.Id" type="button" disabled="@(Model.Status != ApplicationStatus.Approved)">Disburse</button>
-                            <a class="btn btn-danger" href="/admin/loans/reject/?" id="reject_loan" data-id="@Model.Id">Reject</a>
+                            <a class="btn btn-danger" href="javascript:void(0);" id="reject_loan" data-id="@Model.Id" disabled="@(Model.Status == ApplicationStatus.Approved)">Reject</a>
                         </div>
                     </div>
                 </form>
@@ -242,3 +248,42 @@
         </div>
     </section>
 </div>
+
+@section scripts{
+    <script asp-append-version="true" type="text/javascript" src="~/js/pages/transactions.js"></script>
+}
+
+@section modals{
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="reject_modal">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Loan</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="/admin/loans/reject/?" method="get">
+                    <div class="modal-body">
+                            <div class="form-errors" id="rej_errors"></div>
+                            <input type="hidden" name="id" id="ln_id" />
+                            <input type="hidden" id="comment" />
+                            <p class="text-danger">
+                                Are you sure you want to reject this loan?
+                            </p>
+                            <div class="form-group">
+                                <label>Comments</label>
+                                <textarea name="Comment" class="form-control"></textarea>
+                            </div>
+                    </div>
+                    <div class="modal-footer bg-whitesmoke br">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger">Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+}

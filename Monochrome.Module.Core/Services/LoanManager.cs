@@ -109,13 +109,16 @@ namespace Monochrome.Module.Core.Services
                 }
                 
                 // save documents
-                foreach (var item in form.Documents)
+                if (form.Documents != null)
                 {
-                    var location = $"{_environment.WebRootPath}/{Guid.NewGuid()}{item.FileName}";
-                    var stream = new StreamWriter(location);
-                    await item.OpenReadStream().CopyToAsync(stream.BaseStream);
-                    stream.Close();
-                    loan.SupportingDocuments += $"{_contextAccessor.HttpContext.Request.Protocol}://{_contextAccessor.HttpContext.Request.Host.Value}/{Path.GetFileName(location)}";
+                    foreach (var item in form.Documents)
+                    {
+                        var location = $"{_environment.WebRootPath}/{Guid.NewGuid()}{item.FileName}";
+                        var stream = new StreamWriter(location);
+                        await item.OpenReadStream().CopyToAsync(stream.BaseStream);
+                        stream.Close();
+                        loan.SupportingDocuments += $"{_contextAccessor.HttpContext.Request.Scheme}://{_contextAccessor.HttpContext.Request.Host.Value}/{Path.GetFileName(location)}";
+                    }
                 }
 
                 _bankManager.CreditSuperAccount(account.Id, loanFee, "Loan application fee");
@@ -263,8 +266,6 @@ namespace Monochrome.Module.Core.Services
                 totalRepaid += prevRepayments.Sum(b => b.Amount);
             }
 
-            var interestAmount =  (loan.AmountGranted * loan.PecentInterest) / 100;
-            var tobePaid = (loan.AmountGranted + interestAmount);
             if ((totalRepaid + transaction.Amount) > loan.AmountGranted)
             {
                 return new Result<string>()
@@ -273,7 +274,7 @@ namespace Monochrome.Module.Core.Services
                     Error = $"The amount granted for the loan was ₦{loan.AmountGranted / 100:N2} but previous repayments " +
                     $"were made on this loan which sums up to ₦{totalRepaid / 100:N2}. The transaction marked to be added" +
                     $" as a repayment for the loan makes the total mount to be repaid greater than the loan " +
-                    $"amount and interest. The total amount to be paid including interest is ₦{tobePaid / 100:N2} " +
+                    $"amount and interest. The total amount to be paid including interest is ₦{loan.AmountGranted / 100:N2} " +
                     $" but adding this transaction as loan repayment would amount to " +
                     $"₦{(totalRepaid + transaction.Amount) / 100:N2}"
                 };
@@ -285,12 +286,12 @@ namespace Monochrome.Module.Core.Services
                 Amount = transaction.Amount
             };
 
-            if ((totalRepaid + transaction.Amount) == tobePaid)
+            if ((totalRepaid + transaction.Amount) == loan.AmountGranted)
             {
                 loan.Repaid = true;
-                _bankManager.CreditSuperAccount(loan.UserAccountId, interestAmount, "Interest on loan", "Debit for loan interest");
             }
 
+            transaction.IsIdentified = true;
             _repaymentRepo.Insert(history);
             _repaymentRepo.SaveChanges();
 

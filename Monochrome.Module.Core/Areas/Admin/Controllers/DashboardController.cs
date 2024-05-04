@@ -64,7 +64,7 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
             model.LowestBalanceUserName = accounts.LastOrDefault()?.User.UserName;
 
             var time = DateTime.Now.Subtract(TimeSpan.FromDays(400));
-            var analytics = allTransactions.Where(p => p.Date >= time)
+            var debitsAn = allTransactions.Where(p => p.Type == "debit" && p.Date >= time)
                 .GroupBy(k => k.Date.Date)
                 .Select(n => new UserTransaction
                 {
@@ -72,14 +72,30 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
                     Date = n.First().Date
                 });
 
-            if (analytics.Any())
+            var creditAn = allTransactions.Where(p => p.Type == "credit" && p.Date >= time)
+                .GroupBy(k => k.Date.Date)
+                .Select(n => new UserTransaction
+                {
+                    Amount = n.Sum(p => p.Amount),
+                    Date = n.First().Date
+                });
+
+            if (debitsAn.Any())
             {
-                analytics = analytics.OrderBy(n => n.Date);
-                model.FromOneYearDate = analytics.First().Date;
-                model.MaximumDate = analytics.Last().Date;
+                debitsAn = debitsAn.OrderBy(n => n.Date);
             }
 
-            model.Data = analytics.Select(n => new object[] { n.Date.ToUnixTimeMilliseconds(), n.Amount/100 });
+            if (creditAn.Any())
+            {
+                creditAn = creditAn.OrderBy(n => n.Date);
+            }
+
+            var ord = allTransactions.Where(p => p.Date >= time).OrderBy(n => n.Date);
+            model.FromOneYearDate = ord.First().Date;
+            model.MaximumDate = ord.Last().Date;
+
+            model.Debit = debitsAn.Select(n => new object[] { n.Date.ToUnixTimeMilliseconds(), Math.Abs(n.Amount / 100) });
+            model.Credit = creditAn.Select(n => new object[] { n.Date.ToUnixTimeMilliseconds(), n.Amount / 100 });
             return View(model);
         }
 

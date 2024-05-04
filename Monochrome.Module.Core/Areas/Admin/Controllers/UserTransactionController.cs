@@ -134,22 +134,28 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             {
                 var credits = transactions.Where(k => k.Type == "credit").Select(k => new TransactionStatement
                 {
-                    Credit = k.Amount,
+                    Credit = k.Amount / 100,
                     Date = k.Date,
+                    Debit = default
                 });
 
                 var debits = transactions.Where(k => k.Type == "debit").Select(k => new TransactionStatement
                 {
-                    Debit = k.Amount,
+                    Debit = k.Amount / 100,
                     Date = k.Date,
+                    Credit = default
                 });
 
                 var tranStatement = debits.Concat(credits);
                 Response.Headers.Add("Content-Disposition", $"attachment; filename={transactions.First().UserAccount.User.UserName}statement.csv");
 
                 var strData = CsvConverter.ExportCsv(tranStatement);
+                var cr = credits.Sum(k => k.Credit);
+                var db = debits.Sum(k => k.Debit);
+
                 strData += $",Total Credit,Total Debit\n";
-                strData += $",{credits.Sum(k => k.Credit)},{debits.Sum(k => k.Debit)}\n";
+                strData += $",{cr},{db}\n";
+                strData += $",Balance: {cr - db},\n";
 
                 var by = Encoding.UTF8.GetBytes(strData);
                 return new FileContentResult(by, "text/csv");

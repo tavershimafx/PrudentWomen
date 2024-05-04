@@ -95,8 +95,12 @@ namespace Monochrome.Module.Core.Areas.Accounts.Controllers
 
                 user.FirstName = model.FirstName;
                 user.LastName = model.LastName;
-                await _userManager.SetEmailAsync(user, model.Email);
-
+                if (model.Email != user.Email)
+                {
+                    await _userManager.SetEmailAsync(user, model.Email);
+                    await SendEmailChangeVerification(user);
+                }
+                
                 await _signInManager.RefreshSignInAsync(user);
                 ModelState.AddModelError("Errors", "Your profile has been updated");
                 return View();
@@ -337,9 +341,22 @@ namespace Monochrome.Module.Core.Areas.Accounts.Controllers
                     protocol: Request.Scheme);
 
                 await _emailSender.SendEmailAsync(
-                    model.NewEmail,
-                    "Confirm your email",
-                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    model.NewEmail, "Confirm your email",
+                    $"<!doctype html>" +
+                    $"<html lang='en'><head> <meta charset='utf-8'>" +
+                    $"<title>Prudent Women Organisation</title>" +
+                    $"<base href='/'>" +
+                    $"<meta name='viewport' content='width=device-width, initial-scale=1'>" +
+                    $"<link rel='icon' type='image/x-icon' href=''>" +
+                    $"</head><body>" +
+                    $"<h1>Please Confirm Your Email Address on Prudent Women Portal</h1>" +
+                    $"<p>You have just changed your email address on your Prudent Women Account. " +
+                    $"By <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>, you are confirming this change.</p>" +
+                    $"<p>Ignore this message if you did not initiate this change, or if this message was sent to you in error.</p>" +
+                    $"<p>You can report any suspicious activity on your account by visiting our " +
+                    $"website <a href='www.prudentwomen.org'>www.prudentwomen.org</a> and contacting the customer care officers, " +
+                    $"or call us directly via our Help Desk Line: +234 703 602 5402</p>" +
+                    $"</body></html>");
 
                 return Ok("Confirmation link to change email sent. Please check your email.");
             }
@@ -358,15 +375,31 @@ namespace Monochrome.Module.Core.Areas.Accounts.Controllers
             var email = await _userManager.GetEmailAsync(user);
             var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            
             var callbackUrl = Url.Action(
-                "/Account/ConfirmEmail", "Authentication",
-                values: new { userId, code },
-                protocol: Request.Scheme);
-
-            await _emailSender.SendEmailAsync(
-                email,
-                "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                nameof(AuthController.ConfirmEmail), "Auth",
+                values: new { area = "Authentication", userId, code }, protocol: Request.Scheme);
+            await _emailSender.SendEmailAsync(email, "Confirm your email",
+                $"<!doctype html>" +
+                            $"<html lang='en'><head> <meta charset='utf-8'>" +
+                            $"<title>Prudent Women Organisation</title>" +
+                            $"<base href='/'>" +
+                            $"<meta name='viewport' content='width=device-width, initial-scale=1'>" +
+                            $"<link rel='icon' type='image/x-icon' href=''>" +
+                            $"</head><body>" +
+                            $"<h1>Please Confirm Your Email Address on Prudent Women Portal</h1>" +
+                            $"<p>Welcome to the Prudent Women Portal!</p>" +
+                            $"<p>Thank you for registering. We're excited to have you join our community!</p>" +
+                            $"<p>To ensure that we have the correct email address on file and to activate your account, please click on the link below to confirm your email:</p>" +
+                            $"<p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Confirm Account</a></p>" +
+                            $"<p>By confirming your email, you'll gain access to personalized savings and loan accounts, as well as valuable information about our organization's activities, including the Cooperative, Food Bank, Global Godly Outreach Programme, and more.</p>" +
+                            $"<p>If you have any questions or need assistance, feel free to reach out to us at admin@prudentwomen.org.</p>" +
+                            $"<p>Thank you for joining us on Prudent Women Portal. We look forward to empowering and supporting you on your journey!</p>" +
+                            $"<p>Best regards,</p>" +
+                            $"<p>Mrs. Msurshima Comfort Chenge</p>" +
+                            $"<p>Founder & President</p>" +
+                            $"<p>Prudent Women Organisation</p>" +
+                            $"</body></html>");
         }
 
         public async Task<IActionResult> SetPassword()

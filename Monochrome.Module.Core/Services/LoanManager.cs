@@ -196,7 +196,7 @@ namespace Monochrome.Module.Core.Services
                 return new Result<string>() { Succeeded = false, Error = "This loan has already been disbursed." };
             }
 
-            _bankManager.CreditSuperAccount(loan.UserAccountId, loan.AmountGranted, "Loan disbursement");
+            //_bankManager.CreditSuperAccount(loan.UserAccountId, loan.AmountGranted, "Loan disbursement");
             loan.DateDisbursed = DateTime.Now;
             await _loanRepo.SaveChangesAsync();
 

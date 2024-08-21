@@ -53,8 +53,9 @@ $('[data-bulk]').click(function (e) {
     let totalBulkAmount = me.data("amount")
 
     $("#bulk_identify_modal form .modal-body .row").remove();
-
     $("#bulk_identify_modal").modal("show")
+    $("#bulk_errors").html("")
+    $("#items_sum").html("")
 
     $("#add_new_bulk").unbind('click')
     createAppendEvent()
@@ -79,14 +80,14 @@ $('[data-bulk]').click(function (e) {
                 $("#bulk_errors").html(`Please verify your entries and make sure all amounts are valid numbers.`)
                 return
             }
-
+            console.log("i ", index)
             bulkUsers.push(user)
         })
 
-        let sumTotal = bulkUsers.reduce((a, b) => (a.Amount + b.Amount))
-        if (isNaN(sumTotal)) {
-            sumTotal = bulkUsers[0].Amount
-        }
+        let sumTotal = 0
+        bulkUsers.forEach((a, i) => {
+            sumTotal += a.Amount
+        })
 
         if (Number(sumTotal) != Number(totalBulkAmount)) {
             $("#bulk_errors").html(`<p class="text-danger">

@@ -91,8 +91,11 @@ namespace Monochrome.Module.Core.Areas.Admin.Controllers
             }
 
             var ord = allTransactions.Where(p => p.Date >= time).OrderBy(n => n.Date);
-            model.FromOneYearDate = ord.First().Date;
-            model.MaximumDate = ord.Last().Date;
+            if (ord.Any())
+            {
+                model.FromOneYearDate = ord.First().Date;
+                model.MaximumDate = ord.Last().Date;
+            }
 
             model.Debit = debitsAn.Select(n => new object[] { n.Date.ToUnixTimeMilliseconds(), Math.Abs(n.Amount / 100) });
             model.Credit = creditAn.Select(n => new object[] { n.Date.ToUnixTimeMilliseconds(), n.Amount / 100 });

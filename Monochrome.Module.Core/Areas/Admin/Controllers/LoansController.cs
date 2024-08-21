@@ -286,9 +286,10 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
 
         public IActionResult RepayHistory(long id, int page = 1, int size = 50)
         {
+            var loan = _loanRepo.AsQueryable().FirstOrDefault(k => k.Id == id);
             var loans = _repayHistory.AsQueryable()
                 .Include(n => n.Loan)
-                .Where(n => n.LoanId == id)
+                .Where(n => n.LoanId == loan.Id)
                 .OrderByDescending(k => k.DateCreated);
 
             var model = new PaginatedTable<LoanRepaymentHistory>()
@@ -302,11 +303,9 @@ namespace Monochrome.Module.Core.Areas.Core.Controllers
             model.TotalPages = (int)Math.Ceiling((double)model.TotalItems / size);
             model.Page = page;
 
-            if (loans != null && loans.Any())
-            {
-                ViewData["AmountGranted"] = loans.First().Loan.AmountGranted;
-                ViewData["PecentInterest"] = loans.First().Loan.PecentInterest;
-            }
+            ViewData["AmountGranted"] = loan.AmountGranted;
+            ViewData["PecentInterest"] = loan.PecentInterest;
+            
             return View(model);
         }
 
